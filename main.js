@@ -12,12 +12,21 @@ function onVisible(canvas, cb){
 
 function fitCanvas(canvas){
   const ratio = window.devicePixelRatio || 1;
-  canvas.style.width = '';
-  canvas.style.height = '';
-  const cssW = canvas.clientWidth;
-  const cssH = canvas.clientHeight;
+  const parentStyle = window.getComputedStyle(canvas.parentElement);
+  const padX = parseFloat(parentStyle.paddingLeft) + parseFloat(parentStyle.paddingRight);
+  const cssW = canvas.parentElement.clientWidth - padX;
+  
+  // Ambil tinggi asli dari atribut HTML
+  const baseH = parseFloat(canvas.getAttribute('height')) || 150;
+  // Jika di layar mobile (<600px), buat 1.4x lebih panjang
+  const isMobile = window.innerWidth < 600;
+  const cssH = isMobile ? baseH * 1.4 : baseH;
+
+  canvas.style.width = cssW + 'px';
+  canvas.style.height = cssH + 'px';
   canvas.width = cssW * ratio;
   canvas.height = cssH * ratio;
+  
   const ctx = canvas.getContext('2d');
   ctx.setTransform(ratio,0,0,ratio,0,0);
   return { w: cssW, h: cssH, ctx };
