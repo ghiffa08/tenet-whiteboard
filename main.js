@@ -73,9 +73,9 @@ function fitCanvas(canvas){
     ctx.arc(x,y,4.5,0,Math.PI*2);
     ctx.fillStyle = col;
     ctx.shadowColor = col;
-    ctx.shadowBlur = w < 600 ? 0 : ;
+    ctx.shadowBlur = w < 600 ? 0 : 12;
     ctx.fill();
-    ctx.shadowBlur = w < 600 ? 0 : ;
+    ctx.shadowBlur = 0;
 
     if (running) requestAnimationFrame(draw);
   }
