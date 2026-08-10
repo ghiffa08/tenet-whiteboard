@@ -12,23 +12,19 @@ function onVisible(canvas, cb) {
 }
 
 function fitCanvas(canvas) {
-  const ratio = Math.min(window.devicePixelRatio || 1, IS_MOBILE ? 2 : 3);
-
-  // Read dimensions from CSS (which is the ONLY source of truth).
-  // We NEVER set canvas.style.height from JS - that was causing the
-  // infinite growth bug because canvas.height = N mutates the HTML
-  // attribute, which some browsers use as fallback rendered height.
+  // Baca ukuran tampilan dari CSS. JS tidak pernah mengubah ukuran tampilan.
   const rect = canvas.getBoundingClientRect();
-  const cssW = Math.round(rect.width);
-  const cssH = Math.round(rect.height);
+  const w = Math.round(rect.width);
+  const h = Math.round(rect.height);
 
-  // Set the pixel buffer (drawing resolution), NOT the display size.
-  canvas.width  = cssW * ratio;
-  canvas.height = cssH * ratio;
+  // Set resolusi gambar = ukuran tampilan (1:1). Titik. Selesai.
+  // Tidak ada perkalian devicePixelRatio. Tidak ada inline style.
+  // Tidak ada yang bisa membuat canvas membesar.
+  canvas.width  = w;
+  canvas.height = h;
 
   const ctx = canvas.getContext('2d');
-  ctx.setTransform(ratio, 0, 0, ratio, 0, 0);
-  return { w: cssW, h: cssH, ctx };
+  return { w, h, ctx };
 }
 
 // On mobile, NEVER listen to resize. The viewport width doesn't change
