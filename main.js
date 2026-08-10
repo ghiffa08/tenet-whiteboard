@@ -70,7 +70,7 @@ function onResize(fn) {
     const y = midY + Math.sin(t*Math.PI*2)*18;
 
     trail.push({x,y});
-    const trailMax = isMobile() ? 20 : 40;
+    const trailMax = IS_MOBILE ? 20 : 40;
     if (trail.length > trailMax) trail.shift();
 
     const col = state.dir === 1 ? '#e0655c' : '#5b8ce8';
@@ -126,7 +126,7 @@ function onResize(fn) {
 
   function makeParticles(){
     particles = [];
-    const n = isMobile() ? 20 : 40;
+    const n = IS_MOBILE ? 20 : 40;
     const leftW = w*0.46;
     for(let i=0;i<n;i++){
       particles.push({
