@@ -726,7 +726,7 @@ function onVisible(canvas, cb){
 
 function fitCanvas(canvas){
   const ratio = window.devicePixelRatio || 1;
-  const cssH = canvas.height;
+  const cssH = parseFloat(canvas.getAttribute('height'));
   const parentStyle = window.getComputedStyle(canvas.parentElement);
   const padX = parseFloat(parentStyle.paddingLeft) + parseFloat(parentStyle.paddingRight);
   const cssW = canvas.parentElement.clientWidth - padX;
