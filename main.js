@@ -12,26 +12,19 @@ function onVisible(canvas, cb) {
 }
 
 function fitCanvas(canvas) {
-  // Cap pixel ratio at 2 on mobile to save GPU memory
   const ratio = Math.min(window.devicePixelRatio || 1, IS_MOBILE ? 2 : 3);
 
-  // Store original HTML height ONCE. canvas.height = N silently mutates
-  // getAttribute('height'), so data-base-height is the immutable truth.
-  if (!canvas.dataset.baseHeight) {
-    canvas.dataset.baseHeight = canvas.getAttribute('height') || '150';
-  }
+  // Read dimensions from CSS (which is the ONLY source of truth).
+  // We NEVER set canvas.style.height from JS - that was causing the
+  // infinite growth bug because canvas.height = N mutates the HTML
+  // attribute, which some browsers use as fallback rendered height.
+  const rect = canvas.getBoundingClientRect();
+  const cssW = Math.round(rect.width);
+  const cssH = Math.round(rect.height);
 
-  const parent = canvas.parentElement;
-  const ps = getComputedStyle(parent);
-  const padX = parseFloat(ps.paddingLeft) + parseFloat(ps.paddingRight);
-  const cssW = Math.max(1, parent.clientWidth - padX);
-  const baseH = parseFloat(canvas.dataset.baseHeight);
-  const cssH = IS_MOBILE ? Math.round(baseH * 1.4) : baseH;
-
-  canvas.style.width = cssW + 'px';
-  canvas.style.height = cssH + 'px';
-  canvas.width = Math.round(cssW * ratio);
-  canvas.height = Math.round(cssH * ratio);
+  // Set the pixel buffer (drawing resolution), NOT the display size.
+  canvas.width  = cssW * ratio;
+  canvas.height = cssH * ratio;
 
   const ctx = canvas.getContext('2d');
   ctx.setTransform(ratio, 0, 0, ratio, 0, 0);
