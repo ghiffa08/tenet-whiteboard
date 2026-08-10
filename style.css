@@ -24,6 +24,9 @@
     color:var(--ink);
     font-family:'Inter',sans-serif;
     -webkit-font-smoothing:antialiased;
+    /* Faster native scroll on mobile */
+    touch-action: pan-y;
+    overscroll-behavior: contain;
   }
   .wrap{max-width:640px;margin:0 auto;padding:0 18px 80px;}
   ::selection{background:var(--paper);}
@@ -113,7 +116,12 @@
   .science-label .dot{width:7px;height:7px;border-radius:50%;background:var(--green);}
 
   .diagram-box{background:#0f1117;border-radius:14px;padding:16px;position:relative;overflow:hidden;}
-  .diagram-box canvas{width:100%;display:block;border-radius:8px;}
+  .diagram-box canvas{
+    width:100%;display:block;border-radius:8px;
+    /* Promote canvas to its own GPU layer */
+    will-change: transform;
+    transform: translateZ(0);
+  }
   .diagram-caption{
     margin-top:10px;font-family:'IBM Plex Mono',monospace;font-size:10.5px;
     color:#8a90a6;display:flex;justify-content:space-between;gap:10px;flex-wrap:wrap;

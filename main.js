@@ -1,22 +1,62 @@
 /* ===================================================================
-   GLOBAL STATE
+   GLOBAL STATE & UTILITIES
 =================================================================== */
 const state = { dir: 1 }; // 1 = forward, -1 = reverse
 
-function onVisible(canvas, cb){
-  const io = new IntersectionObserver((entries)=>{
-    entries.forEach(e=>{ cb(e.isIntersecting); });
-  }, { threshold: 0.15 });
+// ---- Page Visibility: pause ALL rAF when tab is hidden ----
+let pageVisible = true;
+document.addEventListener('visibilitychange', () => {
+  pageVisible = !document.hidden;
+});
+
+// ---- Cap FPS to 30 on mobile for smooth battery-friendly animation ----
+const isMobile = () => window.innerWidth < 600;
+const TARGET_FPS = 30;
+const FRAME_MS   = 1000 / TARGET_FPS;
+let lastFrameTime = 0;
+
+function rafThrottle(drawFn) {
+  return function loop(now) {
+    if (!pageVisible) { requestAnimationFrame(loop); return; }
+    if (isMobile()) {
+      if (now - lastFrameTime < FRAME_MS) { requestAnimationFrame(loop); return; }
+      lastFrameTime = now;
+    }
+    drawFn();
+    requestAnimationFrame(loop);
+  };
+}
+
+// ---- Debounced resize: ignore address-bar micro-resizes on mobile ----
+const resizeHandlers = [];
+let resizeTimer = null;
+function onResize(fn) { resizeHandlers.push(fn); }
+window.addEventListener('resize', () => {
+  // On mobile skip resizes that only change height (address-bar hide/show)
+  if (isMobile()) {
+    clearTimeout(resizeTimer);
+    resizeTimer = setTimeout(() => resizeHandlers.forEach(fn => fn()), 250);
+  } else {
+    resizeHandlers.forEach(fn => fn());
+  }
+});
+
+// ---- IntersectionObserver: stop animation when canvas is off-screen ----
+function onVisible(canvas, cb) {
+  const io = new IntersectionObserver(entries => {
+    entries.forEach(e => cb(e.isIntersecting));
+  }, { threshold: 0.1 });
   io.observe(canvas);
 }
 
-function fitCanvas(canvas){
-  const ratio = window.devicePixelRatio || 1;
+// ---- fitCanvas: safe from exponential growth on mobile scroll ----
+function fitCanvas(canvas) {
+  const ratio = Math.min(window.devicePixelRatio || 1, 2); // cap at 2x for perf
 
-  // Simpan tinggi asli SEKALI di data attribute sebelum JS menimpanya.
-  // canvas.height = N akan mengubah HTML attribute 'height', makanya kita
-  // pakai data-base-height sebagai sumber kebenaran yang aman.
-  if(!canvas.dataset.baseHeight){
+  // Store original height ONCE before JS can overwrite the HTML attribute.
+  // canvas.height = N silently mutates getAttribute('height'), so we use
+  // data-base-height as the immutable source of truth.
+  if (!canvas.dataset.baseHeight) {
     canvas.dataset.baseHeight = canvas.getAttribute('height') || '150';
   }
 
@@ -25,8 +65,7 @@ function fitCanvas(canvas){
   const cssW = Math.max(1, canvas.parentElement.clientWidth - padX);
 
   const baseH = parseFloat(canvas.dataset.baseHeight);
-  const isMobile = window.innerWidth < 600;
-  const cssH = isMobile ? Math.round(baseH * 1.4) : baseH;
+  const cssH  = isMobile() ? Math.round(baseH * 1.4) : baseH;
 
   canvas.style.width  = cssW + 'px';
   canvas.style.height = cssH + 'px';
@@ -45,7 +84,7 @@ function fitCanvas(canvas){
   const canvas = document.getElementById('heroCanvas');
   if(!canvas) return;
   let { w, h, ctx } = fitCanvas(canvas);
-  window.addEventListener('resize', ()=>{ ({w,h,ctx} = fitCanvas(canvas)); });
+  onResize(()=>{ ({w,h,ctx} = fitCanvas(canvas)); });
 
   let t = 0;
   let running = true;
@@ -72,7 +111,8 @@ function fitCanvas(canvas){
     const y = midY + Math.sin(t*Math.PI*2)*18;
 
     trail.push({x,y});
-    if (trail.length > 40) trail.shift();
+    const trailMax = isMobile() ? 20 : 40;
+    if (trail.length > trailMax) trail.shift();
 
     const col = state.dir === 1 ? '#e0655c' : '#5b8ce8';
     trail.forEach((p,i)=>{
@@ -93,9 +133,10 @@ function fitCanvas(canvas){
     ctx.fill();
     ctx.shadowBlur = 0;
 
-    if (running) requestAnimationFrame(draw);
+    if (running) requestAnimationFrame(loop);
   }
-  onVisible(canvas, v=>{ running = v; if(v) requestAnimationFrame(draw); });
+  const loop = rafThrottle(draw);
+  onVisible(canvas, v=>{ running = v; if(v) requestAnimationFrame(loop); });
 
   const readout = document.getElementById('heroReadout');
   const btns = document.querySelectorAll('#heroToggle button');
@@ -119,7 +160,7 @@ function fitCanvas(canvas){
   const fill = document.getElementById('gasEntropyFill');
   const val = document.getElementById('gasEntropyVal');
   let { w, h, ctx } = fitCanvas(canvas);
-  window.addEventListener('resize', ()=>{ ({w,h,ctx} = fitCanvas(canvas)); makeParticles(); });
+  onResize(()=>{ ({w,h,ctx} = fitCanvas(canvas)); makeParticles(); });
 
   let wallOpen = false;
   let running = true;
@@ -127,7 +168,7 @@ function fitCanvas(canvas){
 
   function makeParticles(){
     particles = [];
-    const n = 40;
+    const n = isMobile() ? 20 : 40;
     const leftW = w*0.46;
     for(let i=0;i<n;i++){
       particles.push({
@@ -190,9 +231,10 @@ function fitCanvas(canvas){
     fill.style.width = e.toFixed(0) + '%';
     val.textContent = e.toFixed(0) + '%';
 
-    if (running) requestAnimationFrame(draw);
+    if (running) requestAnimationFrame(loop);
   }
-  onVisible(canvas, v=>{ running = v; if(v) requestAnimationFrame(draw); });
+  const loop = rafThrottle(draw);
+  onVisible(canvas, v=>{ running = v; if(v) requestAnimationFrame(loop); });
 
   document.getElementById('btnOpenWall').addEventListener('click', ()=>{ wallOpen = true; });
   document.getElementById('btnResetWall').addEventListener('click', ()=>{ wallOpen = false; makeParticles(); });
@@ -206,7 +248,7 @@ function fitCanvas(canvas){
   const slider = document.getElementById('heatSlider');
   const valLabel = document.getElementById('heatVal');
   let { w, h, ctx } = fitCanvas(canvas);
-  window.addEventListener('resize', ()=>{ ({w,h,ctx} = fitCanvas(canvas)); draw(); });
+  onResize(()=>{ ({w,h,ctx} = fitCanvas(canvas)); draw(); });
 
   let playing = false;
   let playTimer = null;
@@ -297,7 +339,7 @@ function fitCanvas(canvas){
   const canvas = document.getElementById('cardCanvas');
   const comboLabel = document.getElementById('cardCombo');
   let { w, h, ctx } = fitCanvas(canvas);
-  window.addEventListener('resize', ()=>{ ({w,h,ctx} = fitCanvas(canvas)); draw(); });
+  onResize(()=>{ ({w,h,ctx} = fitCanvas(canvas)); draw(); });
 
   const N = 16;
   const hues = Array.from({length:N}, (_,i)=> Math.round(i*(360/N)));
@@ -355,7 +397,7 @@ function fitCanvas(canvas){
   const speedSlider = document.getElementById('entSpeedSlider');
   const speedVal = document.getElementById('entSpeedVal');
   let { w, h, ctx } = fitCanvas(canvas);
-  window.addEventListener('resize', ()=>{ ({w,h,ctx} = fitCanvas(canvas)); makeParticles(); });
+  onResize(()=>{ ({w,h,ctx} = fitCanvas(canvas)); makeParticles(); });
 
   let inverted = false;
   let running = true;
@@ -410,9 +452,10 @@ function fitCanvas(canvas){
       ctx.globalAlpha = 1;
     });
 
-    if (running) requestAnimationFrame(draw);
+    if (running) requestAnimationFrame(loop);
   }
-  onVisible(canvas, v=>{ running = v; if(v) requestAnimationFrame(draw); });
+  const loop = rafThrottle(draw);
+  onVisible(canvas, v=>{ running = v; if(v) requestAnimationFrame(loop); });
 
   canvas.parentElement.style.cursor = 'pointer';
   canvas.addEventListener('click', ()=>{
@@ -438,7 +481,7 @@ function fitCanvas(canvas){
   const canvas = document.getElementById('turnstileCanvas');
   if(!canvas) return;
   let { w, h, ctx } = fitCanvas(canvas);
-  window.addEventListener('resize', ()=>{ ({w,h,ctx} = fitCanvas(canvas)); });
+  onResize(()=>{ ({w,h,ctx} = fitCanvas(canvas)); });
 
   let running = true;
   let t1 = 0.1, t2 = 0.9;
@@ -492,9 +535,10 @@ function fitCanvas(canvas){
     ctx.fillText('← TERBALIK', gateX + gateW/2 + 34, h-10);
     ctx.textAlign='left';
 
-    if (running) requestAnimationFrame(draw);
+    if (running) requestAnimationFrame(loop);
   }
-  onVisible(canvas, v=>{ running = v; if(v) requestAnimationFrame(draw); });
+  const loop = rafThrottle(draw);
+  onVisible(canvas, v=>{ running = v; if(v) requestAnimationFrame(loop); });
 })();
 
 /* ===================================================================
@@ -504,7 +548,7 @@ function fitCanvas(canvas){
   const canvas = document.getElementById('pincerCanvas');
   if(!canvas) return;
   let { w, h, ctx } = fitCanvas(canvas);
-  window.addEventListener('resize', ()=>{ ({w,h,ctx} = fitCanvas(canvas)); });
+  onResize(()=>{ ({w,h,ctx} = fitCanvas(canvas)); });
 
   let running = true;
   let p = 0;
@@ -547,9 +591,10 @@ function fitCanvas(canvas){
 
     ctx.textAlign='left';
 
-    if (running) requestAnimationFrame(draw);
+    if (running) requestAnimationFrame(loop);
   }
-  onVisible(canvas, v=>{ running = v; if(v) requestAnimationFrame(draw); });
+  const loop = rafThrottle(draw);
+  onVisible(canvas, v=>{ running = v; if(v) requestAnimationFrame(loop); });
 })();
 
 /* ===================================================================
@@ -559,7 +604,7 @@ function fitCanvas(canvas){
   const canvas = document.getElementById('loopCanvas');
   if(!canvas) return;
   let { w, h, ctx } = fitCanvas(canvas);
-  window.addEventListener('resize', ()=>{ ({w,h,ctx} = fitCanvas(canvas)); });
+  onResize(()=>{ ({w,h,ctx} = fitCanvas(canvas)); });
 
   let running = true;
   let angle = 0;
@@ -601,9 +646,10 @@ function fitCanvas(canvas){
 
     ctx.textAlign='left';
 
-    if (running) requestAnimationFrame(draw);
+    if (running) requestAnimationFrame(loop);
   }
-  onVisible(canvas, v=>{ running = v; if(v) requestAnimationFrame(draw); });
+  const loop = rafThrottle(draw);
+  onVisible(canvas, v=>{ running = v; if(v) requestAnimationFrame(loop); });
 })();
 
 /* ===================================================================
@@ -613,7 +659,7 @@ function fitCanvas(canvas){
   const canvas = document.getElementById('timelineCanvas');
   if(!canvas) return;
   let { w, h, ctx } = fitCanvas(canvas);
-  window.addEventListener('resize', ()=>{ ({w,h,ctx} = fitCanvas(canvas)); });
+  onResize(()=>{ ({w,h,ctx} = fitCanvas(canvas)); });
 
   let running = true;
   let p = 0;
@@ -694,9 +740,10 @@ function fitCanvas(canvas){
     ctx.beginPath(); ctx.arc(neilX, neilY, 5, 0, Math.PI*2); ctx.fillStyle = '#5b8ce8'; 
     ctx.shadowColor='#5b8ce8'; ctx.shadowBlur=8; ctx.fill(); ctx.shadowBlur=0;
 
-    if (running) requestAnimationFrame(draw);
+    if (running) requestAnimationFrame(loop);
   }
-  onVisible(canvas, v=>{ running = v; if(v) requestAnimationFrame(draw); });
+  const loop = rafThrottle(draw);
+  onVisible(canvas, v=>{ running = v; if(v) requestAnimationFrame(loop); });
 })();
 
 /* ===================================================================
@@ -708,7 +755,7 @@ function fitCanvas(canvas){
   const timeVal = document.getElementById('stalskVal');
   if(!canvas) return;
   let { w, h, ctx } = fitCanvas(canvas);
-  window.addEventListener('resize', ()=>{ ({w,h,ctx} = fitCanvas(canvas)); draw(); });
+  onResize(()=>{ ({w,h,ctx} = fitCanvas(canvas)); draw(); });
 
   function draw(){
     const p = slider.value / 100; // 0 to 1
@@ -795,7 +842,7 @@ function fitCanvas(canvas){
   const caption = document.getElementById('bulletCaption');
   if(!canvas) return;
   let { w, h, ctx } = fitCanvas(canvas);
-  window.addEventListener('resize', ()=>{ ({w,h,ctx} = fitCanvas(canvas)); draw(); });
+  onResize(()=>{ ({w,h,ctx} = fitCanvas(canvas)); draw(); });
 
   function draw(){
     const p = slider.value / 100;
@@ -851,7 +898,7 @@ function fitCanvas(canvas){
   const slider = document.getElementById('mirrorSlider');
   if(!canvas) return;
   let { w, h, ctx } = fitCanvas(canvas);
-  window.addEventListener('resize', ()=>{ ({w,h,ctx} = fitCanvas(canvas)); draw(); });
+  onResize(()=>{ ({w,h,ctx} = fitCanvas(canvas)); draw(); });
 
   function drawFigure(x,y,col,facing){
     ctx.save();
@@ -913,7 +960,7 @@ function fitCanvas(canvas){
   const stateLabel = document.getElementById('carState');
   if(!canvas) return;
   let { w, h, ctx } = fitCanvas(canvas);
-  window.addEventListener('resize', ()=>{ ({w,h,ctx} = fitCanvas(canvas)); });
+  onResize(()=>{ ({w,h,ctx} = fitCanvas(canvas)); });
 
   let exploded = false;
   let particles = [];
@@ -970,10 +1017,11 @@ function fitCanvas(canvas){
        ctx.fillRect(carX-8, carY-18, 86, 50);
     }
 
-    if(running) requestAnimationFrame(draw);
+    if (running) requestAnimationFrame(loop);
   }
   
-  onVisible(canvas, v=>{ running = v; if(v) requestAnimationFrame(draw); });
+  const loop = rafThrottle(draw);
+  onVisible(canvas, v=>{ running = v; if(v) requestAnimationFrame(loop); });
 
   btn.addEventListener('click', ()=>{
      exploded = !exploded;
@@ -999,7 +1047,7 @@ function fitCanvas(canvas){
   const caption = document.getElementById('gateCaption');
   if(!canvas) return;
   let { w, h, ctx } = fitCanvas(canvas);
-  window.addEventListener('resize', ()=>{ ({w,h,ctx} = fitCanvas(canvas)); draw(); });
+  onResize(()=>{ ({w,h,ctx} = fitCanvas(canvas)); draw(); });
 
   function draw(){
     const p = slider.value / 100;
@@ -1064,7 +1112,7 @@ function fitCanvas(canvas){
   const slider = document.getElementById('capsuleSlider');
   if(!canvas) return;
   let { w, h, ctx } = fitCanvas(canvas);
-  window.addEventListener('resize', ()=>{ ({w,h,ctx} = fitCanvas(canvas)); draw(); });
+  onResize(()=>{ ({w,h,ctx} = fitCanvas(canvas)); draw(); });
 
   function draw(){
     const p = slider.value / 100;
@@ -1137,7 +1185,7 @@ function fitCanvas(canvas){
   const caption = document.getElementById('punchCaption');
   if(!canvas) return;
   let { w, h, ctx } = fitCanvas(canvas);
-  window.addEventListener('resize', ()=>{ ({w,h,ctx} = fitCanvas(canvas)); draw(); });
+  onResize(()=>{ ({w,h,ctx} = fitCanvas(canvas)); draw(); });
 
   function draw(){
     const p = slider.value / 100;
