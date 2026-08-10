@@ -1,47 +1,9 @@
 /* ===================================================================
    GLOBAL STATE & UTILITIES
 =================================================================== */
-const state = { dir: 1 }; // 1 = forward, -1 = reverse
+const state = { dir: 1 };
+const IS_MOBILE = window.innerWidth < 600;
 
-// ---- Page Visibility: pause ALL rAF when tab is hidden ----
-let pageVisible = true;
-document.addEventListener('visibilitychange', () => {
-  pageVisible = !document.hidden;
-});
-
-// ---- Cap FPS to 30 on mobile for smooth battery-friendly animation ----
-const isMobile = () => window.innerWidth < 600;
-const TARGET_FPS = 30;
-const FRAME_MS   = 1000 / TARGET_FPS;
-let lastFrameTime = 0;
-
-function rafThrottle(drawFn) {
-  return function loop(now) {
-    if (!pageVisible) { requestAnimationFrame(loop); return; }
-    if (isMobile()) {
-      if (now - lastFrameTime < FRAME_MS) { requestAnimationFrame(loop); return; }
-      lastFrameTime = now;
-    }
-    drawFn();
-    requestAnimationFrame(loop);
-  };
-}
-
-// ---- Debounced resize: ignore address-bar micro-resizes on mobile ----
-const resizeHandlers = [];
-let resizeTimer = null;
-function onResize(fn) { resizeHandlers.push(fn); }
-window.addEventListener('resize', () => {
-  // On mobile skip resizes that only change height (address-bar hide/show)
-  if (isMobile()) {
-    clearTimeout(resizeTimer);
-    resizeTimer = setTimeout(() => resizeHandlers.forEach(fn => fn()), 250);
-  } else {
-    resizeHandlers.forEach(fn => fn());
-  }
-});
-
-// ---- IntersectionObserver: stop animation when canvas is off-screen ----
 function onVisible(canvas, cb) {
   const io = new IntersectionObserver(entries => {
     entries.forEach(e => cb(e.isIntersecting));
@@ -49,32 +11,40 @@ function onVisible(canvas, cb) {
   io.observe(canvas);
 }
 
-// ---- fitCanvas: safe from exponential growth on mobile scroll ----
 function fitCanvas(canvas) {
-  const ratio = Math.min(window.devicePixelRatio || 1, 2); // cap at 2x for perf
+  // Cap pixel ratio at 2 on mobile to save GPU memory
+  const ratio = Math.min(window.devicePixelRatio || 1, IS_MOBILE ? 2 : 3);
 
-  // Store original height ONCE before JS can overwrite the HTML attribute.
-  // canvas.height = N silently mutates getAttribute('height'), so we use
-  // data-base-height as the immutable source of truth.
+  // Store original HTML height ONCE. canvas.height = N silently mutates
+  // getAttribute('height'), so data-base-height is the immutable truth.
   if (!canvas.dataset.baseHeight) {
     canvas.dataset.baseHeight = canvas.getAttribute('height') || '150';
   }
 
-  const parentStyle = window.getComputedStyle(canvas.parentElement);
-  const padX = parseFloat(parentStyle.paddingLeft) + parseFloat(parentStyle.paddingRight);
-  const cssW = Math.max(1, canvas.parentElement.clientWidth - padX);
-
+  const parent = canvas.parentElement;
+  const ps = getComputedStyle(parent);
+  const padX = parseFloat(ps.paddingLeft) + parseFloat(ps.paddingRight);
+  const cssW = Math.max(1, parent.clientWidth - padX);
   const baseH = parseFloat(canvas.dataset.baseHeight);
-  const cssH  = isMobile() ? Math.round(baseH * 1.4) : baseH;
+  const cssH = IS_MOBILE ? Math.round(baseH * 1.4) : baseH;
 
-  canvas.style.width  = cssW + 'px';
+  canvas.style.width = cssW + 'px';
   canvas.style.height = cssH + 'px';
-  canvas.width  = Math.round(cssW * ratio);
+  canvas.width = Math.round(cssW * ratio);
   canvas.height = Math.round(cssH * ratio);
 
   const ctx = canvas.getContext('2d');
   ctx.setTransform(ratio, 0, 0, ratio, 0, 0);
   return { w: cssW, h: cssH, ctx };
+}
+
+// On mobile, NEVER listen to resize. The viewport width doesn't change
+// on scroll; only the height changes when the address bar hides/shows,
+// and that was causing the infinite-growth crash loop.
+function onResize(fn) {
+  if (!IS_MOBILE) {
+    window.addEventListener('resize', fn);
+  }
 }
 
 /* ===================================================================
@@ -133,10 +103,9 @@ function fitCanvas(canvas) {
     ctx.fill();
     ctx.shadowBlur = 0;
 
-    if (running) requestAnimationFrame(loop);
+    if (running) requestAnimationFrame(draw);
   }
-  const loop = rafThrottle(draw);
-  onVisible(canvas, v=>{ running = v; if(v) requestAnimationFrame(loop); });
+  onVisible(canvas, v=>{ running = v; if(v) requestAnimationFrame(draw); });
 
   const readout = document.getElementById('heroReadout');
   const btns = document.querySelectorAll('#heroToggle button');
@@ -231,10 +200,9 @@ function fitCanvas(canvas) {
     fill.style.width = e.toFixed(0) + '%';
     val.textContent = e.toFixed(0) + '%';
 
-    if (running) requestAnimationFrame(loop);
+    if (running) requestAnimationFrame(draw);
   }
-  const loop = rafThrottle(draw);
-  onVisible(canvas, v=>{ running = v; if(v) requestAnimationFrame(loop); });
+  onVisible(canvas, v=>{ running = v; if(v) requestAnimationFrame(draw); });
 
   document.getElementById('btnOpenWall').addEventListener('click', ()=>{ wallOpen = true; });
   document.getElementById('btnResetWall').addEventListener('click', ()=>{ wallOpen = false; makeParticles(); });
@@ -452,10 +420,9 @@ function fitCanvas(canvas) {
       ctx.globalAlpha = 1;
     });
 
-    if (running) requestAnimationFrame(loop);
+    if (running) requestAnimationFrame(draw);
   }
-  const loop = rafThrottle(draw);
-  onVisible(canvas, v=>{ running = v; if(v) requestAnimationFrame(loop); });
+  onVisible(canvas, v=>{ running = v; if(v) requestAnimationFrame(draw); });
 
   canvas.parentElement.style.cursor = 'pointer';
   canvas.addEventListener('click', ()=>{
@@ -535,10 +502,9 @@ function fitCanvas(canvas) {
     ctx.fillText('← TERBALIK', gateX + gateW/2 + 34, h-10);
     ctx.textAlign='left';
 
-    if (running) requestAnimationFrame(loop);
+    if (running) requestAnimationFrame(draw);
   }
-  const loop = rafThrottle(draw);
-  onVisible(canvas, v=>{ running = v; if(v) requestAnimationFrame(loop); });
+  onVisible(canvas, v=>{ running = v; if(v) requestAnimationFrame(draw); });
 })();
 
 /* ===================================================================
@@ -591,10 +557,9 @@ function fitCanvas(canvas) {
 
     ctx.textAlign='left';
 
-    if (running) requestAnimationFrame(loop);
+    if (running) requestAnimationFrame(draw);
   }
-  const loop = rafThrottle(draw);
-  onVisible(canvas, v=>{ running = v; if(v) requestAnimationFrame(loop); });
+  onVisible(canvas, v=>{ running = v; if(v) requestAnimationFrame(draw); });
 })();
 
 /* ===================================================================
@@ -646,10 +611,9 @@ function fitCanvas(canvas) {
 
     ctx.textAlign='left';
 
-    if (running) requestAnimationFrame(loop);
+    if (running) requestAnimationFrame(draw);
   }
-  const loop = rafThrottle(draw);
-  onVisible(canvas, v=>{ running = v; if(v) requestAnimationFrame(loop); });
+  onVisible(canvas, v=>{ running = v; if(v) requestAnimationFrame(draw); });
 })();
 
 /* ===================================================================
@@ -740,10 +704,9 @@ function fitCanvas(canvas) {
     ctx.beginPath(); ctx.arc(neilX, neilY, 5, 0, Math.PI*2); ctx.fillStyle = '#5b8ce8'; 
     ctx.shadowColor='#5b8ce8'; ctx.shadowBlur=8; ctx.fill(); ctx.shadowBlur=0;
 
-    if (running) requestAnimationFrame(loop);
+    if (running) requestAnimationFrame(draw);
   }
-  const loop = rafThrottle(draw);
-  onVisible(canvas, v=>{ running = v; if(v) requestAnimationFrame(loop); });
+  onVisible(canvas, v=>{ running = v; if(v) requestAnimationFrame(draw); });
 })();
 
 /* ===================================================================
@@ -1017,11 +980,9 @@ function fitCanvas(canvas) {
        ctx.fillRect(carX-8, carY-18, 86, 50);
     }
 
-    if (running) requestAnimationFrame(loop);
+    if (running) requestAnimationFrame(draw);
   }
-  
-  const loop = rafThrottle(draw);
-  onVisible(canvas, v=>{ running = v; if(v) requestAnimationFrame(loop); });
+  onVisible(canvas, v=>{ running = v; if(v) requestAnimationFrame(draw); });
 
   btn.addEventListener('click', ()=>{
      exploded = !exploded;
