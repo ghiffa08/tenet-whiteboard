@@ -28,6 +28,7 @@ function fitCanvas(canvas){
 =================================================================== */
 (function(){
   const canvas = document.getElementById('heroCanvas');
+  if(!canvas) return;
   let { w, h, ctx } = fitCanvas(canvas);
   window.addEventListener('resize', ()=>{ ({w,h,ctx} = fitCanvas(canvas)); });
 
@@ -420,6 +421,7 @@ function fitCanvas(canvas){
 =================================================================== */
 (function(){
   const canvas = document.getElementById('turnstileCanvas');
+  if(!canvas) return;
   let { w, h, ctx } = fitCanvas(canvas);
   window.addEventListener('resize', ()=>{ ({w,h,ctx} = fitCanvas(canvas)); });
 
@@ -485,6 +487,7 @@ function fitCanvas(canvas){
 =================================================================== */
 (function(){
   const canvas = document.getElementById('pincerCanvas');
+  if(!canvas) return;
   let { w, h, ctx } = fitCanvas(canvas);
   window.addEventListener('resize', ()=>{ ({w,h,ctx} = fitCanvas(canvas)); });
 
@@ -539,6 +542,7 @@ function fitCanvas(canvas){
 =================================================================== */
 (function(){
   const canvas = document.getElementById('loopCanvas');
+  if(!canvas) return;
   let { w, h, ctx } = fitCanvas(canvas);
   window.addEventListener('resize', ()=>{ ({w,h,ctx} = fitCanvas(canvas)); });
 

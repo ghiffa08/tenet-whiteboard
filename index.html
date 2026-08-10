@@ -6,7 +6,224 @@
 <title>Papan Sains TENET: Kuliah Sabtu Pagi</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;600;700&family=Inter:wght@400;500;600;700&family=Kalam:wght@400;700&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="style.css">
+<style>
+  :root{
+    --board:#faf9f4;
+    --board-line:#e6e4d8;
+    --ink:#20222b;
+    --ink-soft:#5b5d68;
+    --red:#c8352b;
+    --red-soft:#f3c9c5;
+    --blue:#1e4fb8;
+    --blue-soft:#c6d6f5;
+    --paper:#fdf3c9;
+    --tape:#e08a2c;
+    --green:#3d7a4f;
+    --line-w:1px;
+  }
+  *{box-sizing:border-box;}
+  html{scroll-behavior:smooth;}
+  body{
+    margin:0;
+    background:var(--board);
+    background-image:
+      linear-gradient(var(--board-line) var(--line-w), transparent var(--line-w)),
+      linear-gradient(90deg, var(--board-line) var(--line-w), transparent var(--line-w));
+    background-size:28px 28px;
+    color:var(--ink);
+    font-family:'Inter',sans-serif;
+    -webkit-font-smoothing:antialiased;
+  }
+  .wrap{max-width:640px;margin:0 auto;padding:0 18px 80px;}
+  ::selection{background:var(--paper);}
+
+  .hand{font-family:'Kalam',cursive;}
+  .mono{font-family:'IBM Plex Mono',monospace;}
+  .display{font-family:'Space Grotesk',sans-serif;}
+  h1,h2,h3{font-family:'Space Grotesk',sans-serif; margin:0; letter-spacing:-0.01em;}
+
+  header.hero{padding:56px 18px 28px;text-align:center;position:relative;}
+  .eyebrow-tag{
+    display:inline-block;font-family:'IBM Plex Mono',monospace;font-size:11px;
+    letter-spacing:.16em;text-transform:uppercase;color:var(--ink-soft);
+    border:1px solid var(--board-line);border-radius:999px;padding:5px 12px;margin-bottom:18px;
+  }
+  h1.title{font-size:clamp(40px,12vw,60px);font-weight:700;line-height:.92;color:var(--ink);}
+  h1.title span{
+    display:block;font-family:'Kalam',cursive;font-weight:700;font-size:.34em;
+    color:var(--red);transform:rotate(-2deg);margin-top:6px;
+  }
+  p.subtitle{max-width:440px;margin:16px auto 0;color:var(--ink-soft);font-size:15px;line-height:1.55;}
+  .hero-canvas-frame{
+    margin:28px auto 0;max-width:420px;background:#12141c;border-radius:14px;
+    padding:14px 14px 10px;box-shadow:0 10px 30px -12px rgba(18,20,28,.4);
+  }
+  .hero-canvas-frame canvas{width:100%;height:130px;display:block;border-radius:8px;}
+  .hero-readout{
+    display:flex;justify-content:space-between;align-items:center;
+    margin-top:10px;font-family:'IBM Plex Mono',monospace;font-size:11px;color:#9aa0b4;
+  }
+
+  .toggle{
+    display:inline-flex;align-items:center;gap:0;background:#1c1f29;border-radius:999px;
+    padding:4px;font-family:'IBM Plex Mono',monospace;font-size:12px;font-weight:600;
+    border:1px solid #2b2f3d;
+  }
+  .toggle button{
+    appearance:none;border:none;background:transparent;color:#8a90a6;
+    padding:8px 14px;border-radius:999px;cursor:pointer;transition:.25s ease;letter-spacing:.03em;
+  }
+  .toggle button.active.fwd{background:var(--red);color:#fff;}
+  .toggle button.active.rev{background:var(--blue);color:#fff;}
+
+  nav.scenes{
+    display:flex;gap:8px;overflow-x:auto;padding:20px 0 6px;
+    -webkit-overflow-scrolling:touch;scrollbar-width:none;
+  }
+  nav.scenes::-webkit-scrollbar{display:none;}
+  nav.scenes a{
+    flex:0 0 auto;font-family:'IBM Plex Mono',monospace;font-size:11.5px;color:var(--ink-soft);
+    border:1px solid var(--board-line);padding:7px 13px;border-radius:999px;
+    text-decoration:none;white-space:nowrap;background:#fff;
+  }
+  nav.scenes a b{color:var(--ink);font-weight:600;}
+
+  section.board{margin-top:52px;scroll-margin-top:24px;}
+  .board-head{margin-bottom:16px;}
+  .day-tag{
+    font-family:'IBM Plex Mono',monospace;font-size:11px;letter-spacing:.14em;
+    text-transform:uppercase;color:var(--red);display:flex;align-items:center;gap:8px;
+  }
+  .day-tag::before{content:'';width:18px;height:1px;background:var(--red);}
+  section.board:nth-of-type(even) .day-tag{color:var(--blue);}
+  section.board:nth-of-type(even) .day-tag::before{background:var(--blue);}
+  .day-tag.green{color:var(--green);}
+  .day-tag.green::before{background:var(--green);}
+  h2.scene-title{font-size:26px;font-weight:700;margin-top:6px;color:var(--ink);}
+
+  .story-card{
+    background:#fff;border:1px solid var(--board-line);border-radius:10px;
+    padding:16px 18px;margin-top:14px;font-size:14.5px;line-height:1.65;color:#33353f;position:relative;
+  }
+  .story-card::before{
+    content:'ADEGAN';position:absolute;top:-9px;left:14px;background:var(--board);
+    font-family:'IBM Plex Mono',monospace;font-size:9.5px;letter-spacing:.14em;
+    color:var(--ink-soft);padding:0 6px;
+  }
+  .story-card.lesson::before{content:'PENJELASAN';}
+  .story-card strong{color:var(--ink);}
+
+  .science-label{
+    display:flex;align-items:center;gap:8px;margin:26px 0 12px;
+    font-family:'Space Grotesk',sans-serif;font-weight:600;font-size:13.5px;
+    color:var(--ink-soft);text-transform:uppercase;letter-spacing:.06em;
+  }
+  .science-label::after{content:'';flex:1;height:1px;background:var(--board-line);}
+  .science-label .dot{width:7px;height:7px;border-radius:50%;background:var(--green);}
+
+  .diagram-box{background:#0f1117;border-radius:14px;padding:16px;position:relative;overflow:hidden;}
+  .diagram-box canvas{width:100%;display:block;border-radius:8px;}
+  .diagram-caption{
+    margin-top:10px;font-family:'IBM Plex Mono',monospace;font-size:10.5px;
+    color:#8a90a6;display:flex;justify-content:space-between;gap:10px;flex-wrap:wrap;
+  }
+
+  /* interactive control rows inside dark diagram boxes */
+  .ctrl-row{
+    margin-top:12px;display:flex;align-items:center;gap:10px;
+    font-family:'IBM Plex Mono',monospace;font-size:10.5px;color:#c7cbdb;
+  }
+  .ctrl-row label{flex:0 0 auto;width:86px;}
+  .ctrl-row input[type=range]{
+    flex:1;-webkit-appearance:none;appearance:none;height:4px;border-radius:2px;
+    background:#2b2f3d;outline:none;
+  }
+  .ctrl-row input[type=range]::-webkit-slider-thumb{
+    -webkit-appearance:none;width:16px;height:16px;border-radius:50%;background:#e0655c;cursor:pointer;
+    box-shadow:0 0 0 4px rgba(224,101,92,.2);
+  }
+  .ctrl-row .val{width:38px;text-align:right;color:#fff;flex:0 0 auto;}
+  .btn-row{display:flex;gap:8px;margin-top:12px;flex-wrap:wrap;}
+  .mini-btn{
+    font-family:'IBM Plex Mono',monospace;font-size:11px;font-weight:600;
+    background:#1c1f29;color:#e7e9f2;border:1px solid #2b2f3d;border-radius:8px;
+    padding:8px 12px;cursor:pointer;transition:.15s ease;
+  }
+  .mini-btn:hover{border-color:#e0655c;}
+  .mini-btn.blue:hover{border-color:#5b8ce8;}
+  .mini-btn:active{transform:scale(.97);}
+  .gauge{
+    margin-top:12px;background:#1c1f29;border-radius:8px;padding:10px 12px;
+  }
+  .gauge-top{
+    display:flex;justify-content:space-between;font-family:'IBM Plex Mono',monospace;
+    font-size:10.5px;color:#c7cbdb;margin-bottom:6px;
+  }
+  .gauge-bar{height:8px;border-radius:99px;background:#2b2f3d;overflow:hidden;}
+  .gauge-fill{height:100%;border-radius:99px;background:linear-gradient(90deg,#3d7a4f,#e0655c);width:0%;transition:width .3s ease;}
+
+  .explain-card{
+    margin-top:14px;background:var(--paper);border-radius:2px;padding:16px 18px 18px;
+    font-size:14px;line-height:1.6;color:#2c2a1c;box-shadow:3px 4px 0 rgba(32,34,43,.08);
+    transform:rotate(-.4deg);position:relative;
+  }
+  section.board:nth-of-type(even) .explain-card{transform:rotate(.4deg);}
+  .explain-card .pin{
+    position:absolute;top:-7px;left:50%;transform:translateX(-50%);width:12px;height:12px;
+    border-radius:50%;background:var(--tape);box-shadow:0 2px 3px rgba(0,0,0,.25);
+  }
+  .explain-card h3{font-family:'Kalam',cursive;font-size:19px;margin-bottom:6px;color:#1c1a0f;}
+  .formula{
+    display:inline-block;margin-top:10px;font-family:'IBM Plex Mono',monospace;font-size:12.5px;
+    background:#fff;border:1px dashed #c9bd7a;border-radius:6px;padding:6px 10px;color:#4a4520;
+  }
+
+  .interactive-hint{
+    display:flex;align-items:center;gap:6px;font-family:'IBM Plex Mono',monospace;
+    font-size:10.5px;color:#8a90a6;margin-top:8px;
+  }
+  .interactive-hint svg{flex:0 0 auto;}
+
+  /* law cards grid (thermodynamics 101) */
+  .law-grid{display:grid;grid-template-columns:1fr;gap:12px;margin-top:16px;}
+  .law-card{
+    background:#fff;border:1px solid var(--board-line);border-radius:10px;padding:14px 16px;
+  }
+  .law-card .law-num{
+    font-family:'Space Grotesk',sans-serif;font-weight:700;font-size:11px;color:#fff;
+    background:var(--ink);display:inline-block;padding:2px 8px;border-radius:5px;margin-bottom:8px;
+  }
+  .law-card h4{font-family:'Space Grotesk',sans-serif;font-size:15px;margin:0 0 6px;}
+  .law-card p{margin:0;font-size:13.5px;line-height:1.55;color:var(--ink-soft);}
+  .law-card .formula{margin-top:8px;}
+
+  .summary{margin-top:64px;background:#fff;border:1px solid var(--board-line);border-radius:14px;padding:22px 18px;}
+  .principle{display:flex;gap:14px;padding:16px 0;border-bottom:1px solid var(--board-line);}
+  .principle:last-child{border-bottom:none;}
+  .principle .num{font-family:'Space Grotesk',sans-serif;font-weight:700;font-size:22px;color:var(--board-line);flex:0 0 auto;width:30px;}
+  .principle h4{font-family:'Space Grotesk',sans-serif;font-size:15.5px;margin:0 0 4px;}
+  .principle p{margin:0;font-size:13.5px;line-height:1.55;color:var(--ink-soft);}
+
+  footer{
+    margin-top:48px;text-align:center;font-family:'IBM Plex Mono',monospace;font-size:11px;
+    color:var(--ink-soft);padding-top:20px;border-top:1px dashed var(--board-line);
+  }
+
+  @media(min-width:600px){
+    .wrap{padding:0 32px 100px;}
+    h2.scene-title{font-size:30px;}
+    .law-grid{grid-template-columns:1fr 1fr;}
+  }
+  @media(max-width:480px){
+    .diagram-caption { font-size: 9.5px; gap: 5px; flex-direction: column; align-items: flex-start; text-align: left; }
+    h1.title{font-size: 32px;}
+    .hero-readout{flex-direction: column; gap: 8px;}
+    .ctrl-row label{width: 70px; font-size: 9.5px;}
+    nav.scenes a{font-size: 10.5px;}
+    .hero-canvas-frame { padding: 10px; }
+    .diagram-box { padding: 12px; }
+  }
+</style>
 </head>
 <body>
 
@@ -18,7 +235,7 @@
     <p class="subtitle">Sebelum kita pusing mikirin jalan cerita filmnya, yuk kita mainan konsep entropi dulu. Coba geser tuas waktu di bawah ini, terus pelan-pelan gulir ke bawah buat cobain eksperimen serunya satu per satu.</p>
 
     <div class="hero-canvas-frame">
-      <canvas></canvas>
+      <canvas id="heroCanvas" height="130"></canvas>
       <div class="hero-readout">
         <span id="heroReadout">ENTROPI: MENYEBAR ATAU NAIK</span>
         <div class="toggle" id="heroToggle">
@@ -69,7 +286,7 @@
 
     <div class="science-label"><span class="dot"></span> Percobaan 1: Kotak Gas</div>
     <div class="diagram-box">
-      <canvas></canvas>
+      <canvas id="gasBoxCanvas" height="200"></canvas>
       <div class="gauge">
         <div class="gauge-top"><span>TINGKAT KEKACAUAN</span><span id="gasEntropyVal">0%</span></div>
         <div class="gauge-bar"><div class="gauge-fill" id="gasEntropyFill"></div></div>
@@ -91,7 +308,7 @@
 
     <div class="science-label"><span class="dot"></span> Percobaan 2: Dua Balok Suhu</div>
     <div class="diagram-box">
-      <canvas></canvas>
+      <canvas id="heatCanvas" height="170"></canvas>
       <div class="ctrl-row">
         <label>Waktu kontak</label>
         <input type="range" id="heatSlider" min="0" max="100" value="0">
@@ -114,7 +331,7 @@
 
     <div class="science-label"><span class="dot"></span> Percobaan 3: Kocok Kartu</div>
     <div class="diagram-box">
-      <canvas></canvas>
+      <canvas id="cardCanvas" height="150"></canvas>
       <div class="diagram-caption">
         <span id="cardCombo">Susunan rapi: 1 dari 20.922.789.888.000 kemungkinan</span>
       </div>
@@ -149,7 +366,7 @@
     <div class="science-label"><span class="dot"></span> Sains di balik adegan ini</div>
 
     <div class="diagram-box">
-      <canvas></canvas>
+      <canvas id="entropyCanvas" height="190"></canvas>
       <div class="diagram-caption">
         <span id="entropyState">MODE: NORMAL, partikel menyebar</span>
         <span>ΔS ≥ 0</span>
@@ -185,7 +402,7 @@
     </div>
 
     <div class="diagram-box">
-      <canvas></canvas>
+      <canvas id="bulletCanvas" height="160"></canvas>
       <div class="ctrl-row">
         <label>Geser Waktu</label>
         <input type="range" id="bulletSlider" min="0" max="100" value="0">
@@ -211,7 +428,7 @@
     <div class="science-label"><span class="dot"></span> Sains di balik adegan ini</div>
 
     <div class="diagram-box">
-      <canvas></canvas>
+      <canvas id="turnstileCanvas" height="200"></canvas>
       <div class="diagram-caption">
         <span>Mesin sebagai gerbang pembalik entropi partikel</span>
         <span>Bukan mesin waktu biasa</span>
@@ -233,7 +450,7 @@
     </div>
 
     <div class="diagram-box">
-      <canvas></canvas>
+      <canvas id="mirrorCanvas" height="180"></canvas>
       <div class="ctrl-row">
         <label>Maju ke Mesin</label>
         <input type="range" id="mirrorSlider" min="0" max="100" value="0">
@@ -258,7 +475,7 @@
     <div class="science-label"><span class="dot"></span> Sains di balik adegan ini</div>
 
     <div class="diagram-box">
-      <canvas></canvas>
+      <canvas id="pincerCanvas" height="190"></canvas>
       <div class="diagram-caption">
         <span>Dua tim, satu target, dua arah waktu</span>
         <span>t maju dan t mundur</span>
@@ -279,7 +496,7 @@
     </div>
 
     <div class="diagram-box">
-      <canvas></canvas>
+      <canvas id="carPhysicsCanvas" height="180"></canvas>
       <div class="btn-row" style="justify-content:center;">
         <button class="mini-btn blue" id="btnExplode">Simulasikan Perpindahan Kalor Terbalik</button>
       </div>
@@ -303,7 +520,7 @@
     <div class="science-label"><span class="dot"></span> Sains di balik adegan ini</div>
 
     <div class="diagram-box">
-      <canvas></canvas>
+      <canvas id="loopCanvas" height="210"></canvas>
       <div class="diagram-caption">
         <span id="loopCaption">Lingkaran kausalitas tertutup</span>
         <span>Prinsip Novikov</span>
@@ -327,7 +544,7 @@
     </div>
 
     <div class="diagram-box">
-      <canvas></canvas>
+      <canvas id="gateCanvas" height="170"></canvas>
       <div class="ctrl-row">
         <label>Perspektif Merah</label>
         <input type="range" id="gateSlider" min="0" max="100" value="0">
@@ -352,7 +569,7 @@
     <div class="science-label"><span class="dot"></span> Visualisasi Alur Film</div>
 
     <div class="diagram-box">
-      <canvas></canvas>
+      <canvas id="timelineCanvas" height="220"></canvas>
       <div class="diagram-caption">
         <span style="color:#e0655c;">● Garis Merah: Protagonist (Maju)</span>
         <span style="color:#5b8ce8;">● Garis Biru: Neil (Maju & Mundur)</span>
@@ -372,7 +589,7 @@
     </div>
 
     <div class="diagram-box">
-      <canvas></canvas>
+      <canvas id="stalskCanvas" height="220"></canvas>
       <div class="ctrl-row">
         <label>Waktu Lokal</label>
         <input type="range" id="stalskSlider" min="0" max="100" value="0">
@@ -405,7 +622,7 @@
     <div class="science-label"><span class="dot"></span> Simetri Waktu: Kapsul Pengirim dan Penerima</div>
 
     <div class="diagram-box">
-      <canvas></canvas>
+      <canvas id="capsuleCanvas" height="180"></canvas>
       <div class="ctrl-row">
         <label>Garis Waktu</label>
         <input type="range" id="capsuleSlider" min="0" max="100" value="0">
@@ -436,7 +653,7 @@
     <div class="science-label"><span class="dot"></span> Analisis Impuls Lintas Waktu</div>
 
     <div class="diagram-box">
-      <canvas></canvas>
+      <canvas id="punchCanvas" height="170"></canvas>
       <div class="ctrl-row">
         <label>Geser (POV Merah)</label>
         <input type="range" id="punchSlider" min="0" max="100" value="0">
@@ -494,6 +711,1199 @@
 
 </div>
 
-<script src="main.js"></script>
+<script>
+/* ===================================================================
+   GLOBAL STATE
+=================================================================== */
+const state = { dir: 1 }; // 1 = forward, -1 = reverse
+
+function onVisible(canvas, cb){
+  const io = new IntersectionObserver((entries)=>{
+    entries.forEach(e=>{ cb(e.isIntersecting); });
+  }, { threshold: 0.15 });
+  io.observe(canvas);
+}
+
+function fitCanvas(canvas){
+  const ratio = window.devicePixelRatio || 1;
+  const cssH = parseFloat(canvas.getAttribute('height'));
+  const parentStyle = window.getComputedStyle(canvas.parentElement);
+  const padX = parseFloat(parentStyle.paddingLeft) + parseFloat(parentStyle.paddingRight);
+  const cssW = canvas.parentElement.clientWidth - padX;
+  canvas.style.width = cssW + 'px';
+  canvas.style.height = cssH + 'px';
+  canvas.width = cssW * ratio;
+  canvas.height = cssH * ratio;
+  const ctx = canvas.getContext('2d');
+  ctx.setTransform(ratio,0,0,ratio,0,0);
+  return { w: cssW, h: cssH, ctx };
+}
+
+/* ===================================================================
+   HERO CANVAS: a bullet on a trail, direction-aware
+=================================================================== */
+(function(){
+  const canvas = document.getElementById('heroCanvas');
+  let { w, h, ctx } = fitCanvas(canvas);
+  window.addEventListener('resize', ()=>{ ({w,h,ctx} = fitCanvas(canvas)); });
+
+  let t = 0;
+  let running = true;
+  let trail = [];
+
+  function draw(){
+    ctx.clearRect(0,0,w,h);
+    ctx.fillStyle = '#12141c';
+    ctx.fillRect(0,0,w,h);
+
+    ctx.strokeStyle = 'rgba(255,255,255,0.05)';
+    ctx.lineWidth = 1;
+    for(let x=0; x<w; x+=24){ ctx.beginPath(); ctx.moveTo(x,0); ctx.lineTo(x,h); ctx.stroke(); }
+
+    const midY = h/2;
+    const margin = 30;
+    const span = w - margin*2;
+
+    t += 0.012 * state.dir;
+    if (t > 1) t = 0;
+    if (t < 0) t = 1;
+
+    const x = margin + span * t;
+    const y = midY + Math.sin(t*Math.PI*2)*18;
+
+    trail.push({x,y});
+    if (trail.length > 40) trail.shift();
+
+    const col = state.dir === 1 ? '#e0655c' : '#5b8ce8';
+    trail.forEach((p,i)=>{
+      const a = i/trail.length;
+      ctx.beginPath();
+      ctx.arc(p.x, p.y, 2.2*a, 0, Math.PI*2);
+      ctx.globalAlpha = a*0.6;
+      ctx.fillStyle = col;
+      ctx.fill();
+    });
+    ctx.globalAlpha = 1;
+
+    ctx.beginPath();
+    ctx.arc(x,y,4.5,0,Math.PI*2);
+    ctx.fillStyle = col;
+    ctx.shadowColor = col;
+    ctx.shadowBlur = 12;
+    ctx.fill();
+    ctx.shadowBlur = 0;
+
+    if (running) requestAnimationFrame(draw);
+  }
+  onVisible(canvas, v=>{ running = v; if(v) requestAnimationFrame(draw); });
+  requestAnimationFrame(draw);
+
+  const readout = document.getElementById('heroReadout');
+  const btns = document.querySelectorAll('#heroToggle button');
+  btns.forEach(b=>{
+    b.addEventListener('click', ()=>{
+      state.dir = b.dataset.dir === 'fwd' ? 1 : -1;
+      btns.forEach(x=>x.classList.remove('active'));
+      b.classList.add('active');
+      readout.textContent = state.dir === 1
+        ? 'ENTROPI: MENYEBAR ATAU NAIK'
+        : 'ENTROPI: TERBALIK ATAU TURUN';
+    });
+  });
+})();
+
+/* ===================================================================
+   PERCOBAAN 1: Kotak Gas (diffusion + live entropy gauge)
+=================================================================== */
+(function(){
+  const canvas = document.getElementById('gasBoxCanvas');
+  const fill = document.getElementById('gasEntropyFill');
+  const val = document.getElementById('gasEntropyVal');
+  let { w, h, ctx } = fitCanvas(canvas);
+  window.addEventListener('resize', ()=>{ ({w,h,ctx} = fitCanvas(canvas)); makeParticles(); });
+
+  let wallOpen = false;
+  let running = true;
+  let particles = [];
+
+  function makeParticles(){
+    particles = [];
+    const n = 40;
+    const leftW = w*0.46;
+    for(let i=0;i<n;i++){
+      particles.push({
+        x: 10 + Math.random()*(leftW-20),
+        y: 20 + Math.random()*(h-40),
+        vx: (Math.random()-0.5)*1.6,
+        vy: (Math.random()-0.5)*1.6,
+        r: 2.6
+      });
+    }
+  }
+  makeParticles();
+
+  function entropyEstimate(){
+    // fraction of particles that made it past the midline = spread measure
+    const rightCount = particles.filter(p=>p.x > w/2).length;
+    const frac = rightCount / particles.length; // 0 = all left, 0.5 = fully mixed
+    return Math.min(1, frac / 0.5) * 100;
+  }
+
+  function draw(){
+    ctx.clearRect(0,0,w,h);
+    ctx.fillStyle = '#0f1117';
+    ctx.fillRect(0,0,w,h);
+
+    const wallX = w/2;
+    if(!wallOpen){
+      ctx.strokeStyle = '#c7cbdb';
+      ctx.lineWidth = 3;
+      ctx.beginPath(); ctx.moveTo(wallX, 8); ctx.lineTo(wallX, h-8); ctx.stroke();
+    } else {
+      ctx.strokeStyle = 'rgba(199,203,219,0.15)';
+      ctx.setLineDash([4,4]);
+      ctx.beginPath(); ctx.moveTo(wallX, 8); ctx.lineTo(wallX, h-8); ctx.stroke();
+      ctx.setLineDash([]);
+    }
+
+    particles.forEach(p=>{
+      p.x += p.vx;
+      p.y += p.vy;
+
+      if(p.y < p.r || p.y > h-p.r) p.vy *= -1;
+      if(p.x < p.r) p.vx *= -1;
+      if(p.x > w-p.r) p.vx *= -1;
+
+      if(!wallOpen){
+        const leftBound = wallX - p.r - 2;
+        if(p.x > leftBound){ p.x = leftBound; p.vx *= -1; }
+      }
+
+      ctx.beginPath();
+      ctx.arc(p.x,p.y,p.r,0,Math.PI*2);
+      ctx.fillStyle = p.x < wallX ? '#e0655c' : '#5b8ce8';
+      ctx.globalAlpha = 0.85;
+      ctx.fill();
+      ctx.globalAlpha = 1;
+    });
+
+    const e = entropyEstimate();
+    fill.style.width = e.toFixed(0) + '%';
+    val.textContent = e.toFixed(0) + '%';
+
+    if (running) requestAnimationFrame(draw);
+  }
+  onVisible(canvas, v=>{ running = v; if (v) requestAnimationFrame(draw); });
+  requestAnimationFrame(draw);
+
+  document.getElementById('btnOpenWall').addEventListener('click', ()=>{ wallOpen = true; });
+  document.getElementById('btnResetWall').addEventListener('click', ()=>{ wallOpen = false; makeParticles(); });
+})();
+
+/* ===================================================================
+   PERCOBAAN 2: Dua Balok Suhu
+=================================================================== */
+(function(){
+  const canvas = document.getElementById('heatCanvas');
+  const slider = document.getElementById('heatSlider');
+  const valLabel = document.getElementById('heatVal');
+  let { w, h, ctx } = fitCanvas(canvas);
+  window.addEventListener('resize', ()=>{ ({w,h,ctx} = fitCanvas(canvas)); draw(); });
+
+  let playing = false;
+  let playTimer = null;
+
+  function lerp(a,b,t){ return a+(b-a)*t; }
+  function colorForTemp(t){
+    // t: 0 (cold blue) .. 1 (hot red)
+    const r = Math.round(lerp(91,224,t));
+    const g = Math.round(lerp(140,101,t));
+    const b = Math.round(lerp(232,92,t));
+    return `rgb(${r},${g},${b})`;
+  }
+
+  function draw(){
+    const p = slider.value/100;
+    ctx.clearRect(0,0,w,h);
+    ctx.fillStyle = '#0f1117';
+    ctx.fillRect(0,0,w,h);
+
+    const blockW = w*0.30, blockH = h*0.5, gap = w*0.20;
+    const y = h/2 - blockH/2;
+    const leftX = w/2 - gap/2 - blockW;
+    const rightX = w/2 + gap/2;
+
+    // temps converge toward 0.5 as p -> 1
+    const hotTemp = lerp(0.92, 0.5, p);
+    const coldTemp = lerp(0.08, 0.5, p);
+
+    ctx.fillStyle = colorForTemp(hotTemp);
+    ctx.fillRect(leftX, y, blockW, blockH);
+    ctx.fillStyle = colorForTemp(coldTemp);
+    ctx.fillRect(rightX, y, blockW, blockH);
+
+    ctx.font = '11px "IBM Plex Mono", monospace';
+    ctx.textAlign = 'center';
+    ctx.fillStyle = '#0f1117';
+    ctx.fillText(Math.round(20 + hotTemp*80) + '°', leftX+blockW/2, y+blockH/2+4);
+    ctx.fillText(Math.round(20 + coldTemp*80) + '°', rightX+blockW/2, y+blockH/2+4);
+
+    ctx.fillStyle = '#8a90a6';
+    ctx.fillText('PANAS', leftX+blockW/2, y-10);
+    ctx.fillText('DINGIN', rightX+blockW/2, y-10);
+
+    if(p>0.02 && p<0.98){
+      ctx.strokeStyle = 'rgba(255,255,255,0.4)';
+      ctx.lineWidth = 1.4;
+      ctx.beginPath();
+      ctx.moveTo(leftX+blockW+4, h/2);
+      ctx.lineTo(rightX-4, h/2);
+      ctx.stroke();
+      ctx.fillStyle = '#ffffff';
+      ctx.fillText('kalor mengalir →', w/2, h/2-8);
+    }
+    if(p>=0.98){
+      ctx.fillStyle = '#3d7a4f';
+      ctx.fillText('kesetimbangan tercapai', w/2, h-10);
+    }
+    ctx.textAlign = 'left';
+    valLabel.textContent = Math.round(p*100) + '%';
+  }
+  onVisible(canvas, ()=>{ draw(); });
+  slider.addEventListener('input', draw);
+  draw();
+
+  document.getElementById('btnHeatPlay').addEventListener('click', (e)=>{
+    if(playing){
+      clearInterval(playTimer); playing = false; e.target.textContent = '▶ Jalankan Otomatis';
+      return;
+    }
+    playing = true; e.target.textContent = '⏸ Jeda';
+    playTimer = setInterval(()=>{
+      let v = parseInt(slider.value,10) + 2;
+      if(v>=100){ v=100; clearInterval(playTimer); playing=false; document.getElementById('btnHeatPlay').textContent='▶ Jalankan Otomatis'; }
+      slider.value = v; draw();
+    }, 60);
+  });
+  document.getElementById('btnHeatReset').addEventListener('click', ()=>{
+    clearInterval(playTimer); playing = false;
+    document.getElementById('btnHeatPlay').textContent = '▶ Jalankan Otomatis';
+    slider.value = 0; draw();
+  });
+})();
+
+/* ===================================================================
+   PERCOBAAN 3: Kocok Kartu
+=================================================================== */
+(function(){
+  const canvas = document.getElementById('cardCanvas');
+  const comboLabel = document.getElementById('cardCombo');
+  let { w, h, ctx } = fitCanvas(canvas);
+  window.addEventListener('resize', ()=>{ ({w,h,ctx} = fitCanvas(canvas)); draw(); });
+
+  const N = 16;
+  const hues = Array.from({length:N}, (_,i)=> Math.round(i*(360/N)));
+  let order = hues.map((_,i)=>i);
+  let shuffleCount = 0;
+
+  function draw(){
+    ctx.clearRect(0,0,w,h);
+    ctx.fillStyle = '#0f1117';
+    ctx.fillRect(0,0,w,h);
+
+    const cols = 8, rows = 2;
+    const pad = 10;
+    const cw = (w - pad*(cols+1))/cols;
+    const ch = (h - pad*(rows+1))/rows;
+
+    order.forEach((idx,i)=>{
+      const cx = i % cols, cy = Math.floor(i/cols);
+      const x = pad + cx*(cw+pad);
+      const y = pad + cy*(ch+pad);
+      ctx.fillStyle = `hsl(${hues[idx]},65%,55%)`;
+      ctx.beginPath();
+      ctx.roundRect ? ctx.roundRect(x,y,cw,ch,6) : ctx.rect(x,y,cw,ch);
+      ctx.fill();
+    });
+  }
+  onVisible(canvas, ()=>{ draw(); });
+  draw();
+
+  document.getElementById('btnShuffle').addEventListener('click', ()=>{
+    for(let i=order.length-1;i>0;i--){
+      const j = Math.floor(Math.random()*(i+1));
+      [order[i],order[j]] = [order[j],order[i]];
+    }
+    shuffleCount++;
+    draw();
+    comboLabel.textContent = 'Kocokan ke-' + shuffleCount + ' dari 20.922.789.888.000 kemungkinan susunan';
+  });
+  document.getElementById('btnSort').addEventListener('click', ()=>{
+    order = hues.map((_,i)=>i);
+    shuffleCount = 0;
+    draw();
+    comboLabel.textContent = 'Susunan rapi: 1 dari 20.922.789.888.000 kemungkinan';
+  });
+})();
+
+/* ===================================================================
+   SCENE 1: Entropy particle diagram (tap to flip, sliders to tune)
+=================================================================== */
+(function(){
+  const canvas = document.getElementById('entropyCanvas');
+  const stateLabel = document.getElementById('entropyState');
+  const countSlider = document.getElementById('entCountSlider');
+  const countVal = document.getElementById('entCountVal');
+  const speedSlider = document.getElementById('entSpeedSlider');
+  const speedVal = document.getElementById('entSpeedVal');
+  let { w, h, ctx } = fitCanvas(canvas);
+  window.addEventListener('resize', ()=>{ ({w,h,ctx} = fitCanvas(canvas)); makeParticles(); });
+
+  let inverted = false;
+  let running = true;
+  const cx = ()=> w/2, cy = ()=> h/2;
+
+  let particles = [];
+  function makeParticles(){
+    particles = [];
+    const n = parseInt(countSlider.value,10);
+    for(let i=0;i<n;i++){
+      const angle = Math.random()*Math.PI*2;
+      const dist = 20 + Math.random()* (Math.min(w,h)/2 - 20);
+      particles.push({
+        angle, dist,
+        p: Math.random(),
+        speed: 0.004 + Math.random()*0.006,
+        size: 1.4 + Math.random()*2.2
+      });
+    }
+  }
+  makeParticles();
+
+  function draw(){
+    ctx.clearRect(0,0,w,h);
+    ctx.fillStyle = '#0f1117';
+    ctx.fillRect(0,0,w,h);
+
+    ctx.beginPath();
+    ctx.arc(cx(),cy(),3,0,Math.PI*2);
+    ctx.fillStyle = 'rgba(255,255,255,0.25)';
+    ctx.fill();
+
+    const speedMul = parseInt(speedSlider.value,10)/100;
+
+    particles.forEach(pt=>{
+      const step = pt.speed * speedMul;
+      if(!inverted){
+        pt.p += step;
+        if (pt.p > 1){ pt.p = 0; }
+      } else {
+        pt.p -= step*1.6;
+        if (pt.p < 0){ pt.p = 1; }
+      }
+      const r = pt.p * pt.dist;
+      const x = cx() + Math.cos(pt.angle)*r;
+      const y = cy() + Math.sin(pt.angle)*r;
+      ctx.beginPath();
+      ctx.arc(x,y,pt.size,0,Math.PI*2);
+      ctx.fillStyle = inverted ? '#5b8ce8' : '#e0655c';
+      ctx.globalAlpha = 0.4 + pt.p*0.6;
+      ctx.fill();
+      ctx.globalAlpha = 1;
+    });
+
+    if (running) requestAnimationFrame(draw);
+  }
+  onVisible(canvas, v=>{ running = v; if (v) requestAnimationFrame(draw); });
+  requestAnimationFrame(draw);
+
+  canvas.parentElement.style.cursor = 'pointer';
+  canvas.addEventListener('click', ()=>{
+    inverted = !inverted;
+    stateLabel.textContent = inverted
+      ? 'MODE: TERBALIK, partikel mengumpul'
+      : 'MODE: NORMAL, partikel menyebar';
+  });
+
+  countSlider.addEventListener('input', ()=>{
+    countVal.textContent = countSlider.value;
+    makeParticles();
+  });
+  speedSlider.addEventListener('input', ()=>{
+    speedVal.textContent = speedSlider.value + '%';
+  });
+})();
+
+/* ===================================================================
+   SCENE 2: Turnstile, two figures passing through a gate
+=================================================================== */
+(function(){
+  const canvas = document.getElementById('turnstileCanvas');
+  let { w, h, ctx } = fitCanvas(canvas);
+  window.addEventListener('resize', ()=>{ ({w,h,ctx} = fitCanvas(canvas)); });
+
+  let running = true;
+  let t1 = 0.1, t2 = 0.9;
+
+  function drawFigure(x,y,col,facing){
+    ctx.save();
+    ctx.translate(x,y);
+    ctx.scale(facing,1);
+    ctx.strokeStyle = col; ctx.lineWidth = 2.4; ctx.lineCap='round';
+    ctx.beginPath(); ctx.arc(0,-20,6,0,Math.PI*2); ctx.stroke();
+    ctx.beginPath(); ctx.moveTo(0,-14); ctx.lineTo(0,8); ctx.stroke();
+    ctx.beginPath(); ctx.moveTo(0,-6); ctx.lineTo(-10,2); ctx.moveTo(0,-6); ctx.lineTo(10,-10); ctx.stroke();
+    ctx.beginPath(); ctx.moveTo(0,8); ctx.lineTo(-8,22); ctx.moveTo(0,8); ctx.lineTo(8,22); ctx.stroke();
+    ctx.restore();
+  }
+
+  function draw(){
+    ctx.clearRect(0,0,w,h);
+    ctx.fillStyle = '#0f1117'; ctx.fillRect(0,0,w,h);
+
+    const gateX = w/2;
+    const gateW = 26, gateH = h*0.62;
+    const gateY = h/2 - gateH/2;
+
+    ctx.strokeStyle = 'rgba(255,255,255,0.4)';
+    ctx.lineWidth = 2;
+    ctx.strokeRect(gateX-gateW/2, gateY, gateW, gateH);
+    ctx.fillStyle = 'rgba(255,255,255,0.05)';
+    ctx.fillRect(gateX-gateW/2, gateY, gateW, gateH);
+    for(let i=1;i<5;i++){
+      const yy = gateY + gateH*i/5;
+      ctx.beginPath(); ctx.moveTo(gateX-gateW/2, yy); ctx.lineTo(gateX+gateW/2, yy);
+      ctx.strokeStyle='rgba(255,255,255,0.15)'; ctx.lineWidth=1; ctx.stroke();
+    }
+
+    t1 += 0.006; if (t1>1.15) t1 = -0.15;
+    t2 -= 0.006; if (t2<-0.15) t2 = 1.15;
+
+    const margin = 26;
+    const span = w - margin*2;
+    const x1 = margin + span*t1;
+    const x2 = margin + span*t2;
+
+    drawFigure(x1, h/2+18, '#e0655c', 1);
+    drawFigure(x2, h/2+18, '#5b8ce8', -1);
+
+    ctx.font = '10px "IBM Plex Mono", monospace';
+    ctx.fillStyle = '#8a90a6';
+    ctx.textAlign='center';
+    ctx.fillText('NORMAL →', gateX - gateW/2 - 34, h-10);
+    ctx.fillText('← TERBALIK', gateX + gateW/2 + 34, h-10);
+    ctx.textAlign='left';
+
+    if (running) requestAnimationFrame(draw);
+  }
+  onVisible(canvas, v=>{ running = v; if (v) requestAnimationFrame(draw); });
+  requestAnimationFrame(draw);
+})();
+
+/* ===================================================================
+   SCENE 3: Temporal pincer, two convoys converge from opposite time
+=================================================================== */
+(function(){
+  const canvas = document.getElementById('pincerCanvas');
+  let { w, h, ctx } = fitCanvas(canvas);
+  window.addEventListener('resize', ()=>{ ({w,h,ctx} = fitCanvas(canvas)); });
+
+  let running = true;
+  let p = 0;
+
+  function draw(){
+    ctx.clearRect(0,0,w,h);
+    ctx.fillStyle = '#0f1117'; ctx.fillRect(0,0,w,h);
+
+    const midY = h*0.58;
+    const margin = 30;
+    const targetX = w/2;
+
+    ctx.strokeStyle = 'rgba(255,255,255,0.18)';
+    ctx.lineWidth = 1.5;
+    ctx.beginPath(); ctx.moveTo(margin, midY); ctx.lineTo(w-margin, midY); ctx.stroke();
+
+    ctx.beginPath();
+    ctx.arc(targetX, midY, 5, 0, Math.PI*2);
+    ctx.strokeStyle = '#f2c14e'; ctx.lineWidth = 2; ctx.stroke();
+    ctx.font = '10px "IBM Plex Mono", monospace';
+    ctx.fillStyle = '#f2c14e'; ctx.textAlign='center';
+    ctx.fillText('TARGET', targetX, midY-14);
+
+    p += 0.008;
+    const cycle = p % 1;
+    const ease = cycle < 0.85 ? cycle/0.85 : 1;
+
+    const redX = margin + (targetX-margin)*ease;
+    const blueX = (w-margin) - ((w-margin)-targetX)*ease;
+
+    ctx.fillStyle = '#e0655c';
+    ctx.beginPath(); ctx.moveTo(redX-8,midY+16); ctx.lineTo(redX+8,midY+16); ctx.lineTo(redX,midY+4); ctx.closePath(); ctx.fill();
+    ctx.font = '9px "IBM Plex Mono", monospace'; ctx.fillStyle='#e0655c';
+    ctx.fillText('TIM MERAH · MAJU', redX, midY+30);
+
+    ctx.fillStyle = '#5b8ce8';
+    ctx.beginPath(); ctx.moveTo(blueX-8,midY-16); ctx.lineTo(blueX+8,midY-16); ctx.lineTo(blueX,midY-4); ctx.closePath(); ctx.fill();
+    ctx.fillStyle='#5b8ce8';
+    ctx.fillText('TIM BIRU · MUNDUR', blueX, midY-24);
+
+    ctx.textAlign='left';
+
+    if (running) requestAnimationFrame(draw);
+  }
+  onVisible(canvas, v=>{ running = v; if (v) requestAnimationFrame(draw); });
+  requestAnimationFrame(draw);
+})();
+
+/* ===================================================================
+   SCENE 4: Causal loop, closed circle (Novikov) vs crossed-out branch
+=================================================================== */
+(function(){
+  const canvas = document.getElementById('loopCanvas');
+  let { w, h, ctx } = fitCanvas(canvas);
+  window.addEventListener('resize', ()=>{ ({w,h,ctx} = fitCanvas(canvas)); });
+
+  let running = true;
+  let angle = 0;
+
+  function draw(){
+    ctx.clearRect(0,0,w,h);
+    ctx.fillStyle = '#0f1117'; ctx.fillRect(0,0,w,h);
+
+    const lx = w*0.27, ly = h*0.42;
+    ctx.strokeStyle = 'rgba(255,255,255,0.25)'; ctx.lineWidth = 1.6;
+    ctx.beginPath(); ctx.moveTo(lx-34, ly+30); ctx.lineTo(lx, ly); ctx.stroke();
+    ctx.beginPath(); ctx.moveTo(lx, ly); ctx.lineTo(lx+34, ly-26); ctx.stroke();
+    ctx.setLineDash([3,3]);
+    ctx.beginPath(); ctx.moveTo(lx, ly); ctx.lineTo(lx-6, ly-34); ctx.stroke();
+    ctx.setLineDash([]);
+    ctx.strokeStyle = '#e0655c'; ctx.lineWidth = 2.4;
+    ctx.beginPath(); ctx.moveTo(lx-9,ly-9); ctx.lineTo(lx+9,ly+9); ctx.moveTo(lx+9,ly-9); ctx.lineTo(lx-9,ly+9); ctx.stroke();
+    ctx.font = '9px "IBM Plex Mono", monospace'; ctx.fillStyle = '#8a90a6'; ctx.textAlign='center';
+    ctx.fillText('paradoks: cabang baru', lx, ly+52);
+
+    const rx = w*0.72, ry = h*0.42, rad = Math.min(w,h)*0.2;
+    ctx.strokeStyle = 'rgba(255,255,255,0.3)'; ctx.lineWidth = 1.6;
+    ctx.beginPath(); ctx.arc(rx,ry,rad,0,Math.PI*2); ctx.stroke();
+
+    angle += 0.018;
+    const redX = rx + Math.cos(angle)*rad;
+    const redY = ry + Math.sin(angle)*rad;
+    const blueX = rx + Math.cos(angle+Math.PI)*rad;
+    const blueY = ry + Math.sin(angle+Math.PI)*rad;
+
+    ctx.beginPath(); ctx.moveTo(redX,redY); ctx.lineTo(blueX,blueY);
+    ctx.strokeStyle = 'rgba(255,255,255,0.12)'; ctx.lineWidth = 1; ctx.stroke();
+
+    ctx.beginPath(); ctx.arc(redX,redY,5,0,Math.PI*2); ctx.fillStyle='#e0655c'; ctx.fill();
+    ctx.beginPath(); ctx.arc(blueX,blueY,5,0,Math.PI*2); ctx.fillStyle='#5b8ce8'; ctx.fill();
+
+    ctx.fillStyle = '#8a90a6';
+    ctx.fillText('Tenet: satu garis waktu', rx, ry+rad+28);
+
+    ctx.textAlign='left';
+
+    if (running) requestAnimationFrame(draw);
+  }
+  onVisible(canvas, v=>{ running = v; if (v) requestAnimationFrame(draw); });
+  requestAnimationFrame(draw);
+})();
+
+/* ===================================================================
+   SCENE 5: Timeline Flow (Alur Waktu)
+=================================================================== */
+(function(){
+  const canvas = document.getElementById('timelineCanvas');
+  if(!canvas) return;
+  let { w, h, ctx } = fitCanvas(canvas);
+  window.addEventListener('resize', ()=>{ ({w,h,ctx} = fitCanvas(canvas)); });
+
+  let running = true;
+  let p = 0;
+
+  function draw(){
+    ctx.clearRect(0,0,w,h);
+    ctx.fillStyle = '#0f1117'; ctx.fillRect(0,0,w,h);
+
+    const margin = 20;
+    const spanX = w - margin*2;
+    
+    const events = [
+      { name: 'Opera', x: margin + spanX*0.1 },
+      { name: 'Oslo', x: margin + spanX*0.35 },
+      { name: 'Tallinn', x: margin + spanX*0.65 },
+      { name: 'Stalsk-12', x: margin + spanX*0.9 }
+    ];
+
+    const yAxis = h/2;
+    ctx.strokeStyle = 'rgba(255,255,255,0.1)';
+    ctx.lineWidth = 1;
+    ctx.beginPath(); ctx.moveTo(margin, yAxis); ctx.lineTo(w-margin, yAxis); ctx.stroke();
+    
+    ctx.font = '10px "IBM Plex Mono", monospace';
+    ctx.textAlign = 'center';
+    events.forEach(ev => {
+      ctx.beginPath(); ctx.arc(ev.x, yAxis, 3, 0, Math.PI*2); ctx.fillStyle = 'rgba(255,255,255,0.3)'; ctx.fill();
+      ctx.fillStyle = '#8a90a6'; ctx.fillText(ev.name, ev.x, yAxis + 24);
+    });
+
+    p += 0.0025;
+    if (p > 1) p = 0;
+
+    // Protagonist (Red)
+    ctx.strokeStyle = 'rgba(224, 101, 92, 0.4)'; ctx.lineWidth = 2;
+    ctx.beginPath(); ctx.moveTo(margin, yAxis - 15); ctx.lineTo(events[3].x + 20, yAxis - 15); ctx.stroke();
+
+    const protagX = margin + (events[3].x + 20 - margin) * p;
+    ctx.beginPath(); ctx.arc(protagX, yAxis - 15, 5, 0, Math.PI*2); ctx.fillStyle = '#e0655c'; 
+    ctx.shadowColor='#e0655c'; ctx.shadowBlur=8; ctx.fill(); ctx.shadowBlur=0;
+
+    // Neil (Blue)
+    ctx.strokeStyle = 'rgba(91, 140, 232, 0.4)'; ctx.lineWidth = 2;
+    ctx.beginPath();
+    ctx.moveTo(w-margin, yAxis + 15);
+    ctx.lineTo(events[2].x, yAxis + 15); 
+    ctx.arc(events[2].x, yAxis, 15, Math.PI/2, Math.PI*1.5);
+    ctx.lineTo(events[3].x, yAxis - 15);
+    ctx.arc(events[3].x, yAxis, 15, -Math.PI/2, Math.PI/2);
+    ctx.lineTo(events[0].x, yAxis + 15);
+    ctx.stroke();
+
+    let neilX, neilY;
+    if (p < 0.3) {
+      const localP = p / 0.3;
+      neilX = (w-margin) - ((w-margin) - events[2].x) * localP;
+      neilY = yAxis + 15;
+    } else if (p < 0.4) {
+      const localP = (p - 0.3) / 0.1;
+      const angle = Math.PI/2 + Math.PI * localP;
+      neilX = events[2].x + Math.cos(angle)*15;
+      neilY = yAxis + Math.sin(angle)*15;
+    } else if (p < 0.7) {
+      const localP = (p - 0.4) / 0.3;
+      neilX = events[2].x + (events[3].x - events[2].x) * localP;
+      neilY = yAxis - 15;
+    } else if (p < 0.8) {
+      const localP = (p - 0.7) / 0.1;
+      const angle = -Math.PI/2 + Math.PI * localP;
+      neilX = events[3].x + Math.cos(angle)*15;
+      neilY = yAxis + Math.sin(angle)*15;
+    } else {
+      const localP = (p - 0.8) / 0.2;
+      neilX = events[3].x - (events[3].x - events[0].x) * localP;
+      neilY = yAxis + 15;
+    }
+
+    ctx.beginPath(); ctx.arc(neilX, neilY, 5, 0, Math.PI*2); ctx.fillStyle = '#5b8ce8'; 
+    ctx.shadowColor='#5b8ce8'; ctx.shadowBlur=8; ctx.fill(); ctx.shadowBlur=0;
+
+    if (running) requestAnimationFrame(draw);
+  }
+  onVisible(canvas, v=>{ running = v; if (v) requestAnimationFrame(draw); });
+  requestAnimationFrame(draw);
+})();
+
+/* ===================================================================
+   SCENE 5B: Stalsk-12 10-Minute Pincer Interactive Slider
+=================================================================== */
+(function(){
+  const canvas = document.getElementById('stalskCanvas');
+  const slider = document.getElementById('stalskSlider');
+  const timeVal = document.getElementById('stalskVal');
+  if(!canvas) return;
+  let { w, h, ctx } = fitCanvas(canvas);
+  window.addEventListener('resize', ()=>{ ({w,h,ctx} = fitCanvas(canvas)); draw(); });
+
+  function draw(){
+    const p = slider.value / 100; // 0 to 1
+    const totalSeconds = p * 600; // 10 minutes = 600s
+    const m = Math.floor(totalSeconds / 60);
+    const s = Math.floor(totalSeconds % 60);
+    timeVal.textContent = String(m).padStart(2,'0') + ':' + String(s).padStart(2,'0');
+
+    ctx.clearRect(0,0,w,h);
+    ctx.fillStyle = '#0f1117'; ctx.fillRect(0,0,w,h);
+
+    const margin = 30;
+    const trackW = w - margin*2;
+    const yRed = h*0.35;
+    const yBlue = h*0.65;
+
+    // Draw static timelines
+    ctx.strokeStyle = 'rgba(255,255,255,0.1)'; ctx.lineWidth = 2;
+    ctx.beginPath(); ctx.moveTo(margin, yRed); ctx.lineTo(w-margin, yRed); ctx.stroke();
+    ctx.beginPath(); ctx.moveTo(margin, yBlue); ctx.lineTo(w-margin, yBlue); ctx.stroke();
+
+    // Time markings
+    ctx.fillStyle = '#8a90a6'; ctx.font = '10px "IBM Plex Mono", monospace';
+    ctx.textAlign = 'center';
+    ctx.fillText('0 Menit', margin, h*0.5 + 4);
+    ctx.fillText('5 Menit', margin + trackW*0.5, h*0.5 + 4);
+    ctx.fillText('10 Menit', w-margin, h*0.5 + 4);
+    
+    // Vertical grid lines
+    ctx.strokeStyle = 'rgba(255,255,255,0.05)';
+    ctx.lineWidth = 1;
+    ctx.beginPath(); ctx.moveTo(margin, yRed-20); ctx.lineTo(margin, yBlue+20); ctx.stroke();
+    ctx.beginPath(); ctx.moveTo(margin + trackW*0.5, yRed-20); ctx.lineTo(margin + trackW*0.5, yBlue+20); ctx.stroke();
+    ctx.beginPath(); ctx.moveTo(w-margin, yRed-20); ctx.lineTo(w-margin, yBlue+20); ctx.stroke();
+
+    // Center explosion marker
+    ctx.beginPath(); ctx.arc(margin + trackW*0.5, h*0.5, 6, 0, Math.PI*2);
+    ctx.fillStyle = p > 0.48 && p < 0.52 ? '#f2c14e' : 'rgba(255,255,255,0.1)';
+    if(p > 0.48 && p < 0.52) {
+       ctx.shadowColor='#f2c14e'; ctx.shadowBlur=12; 
+    }
+    ctx.fill(); ctx.shadowBlur=0;
+    if(p > 0.48 && p < 0.52) {
+      ctx.fillStyle = '#f2c14e';
+      ctx.fillText('LEDAKAN GANDA', margin + trackW*0.5, h*0.5 - 12);
+    }
+
+    // Red Team Progress (moves left to right)
+    const redX = margin + trackW * p;
+    ctx.strokeStyle = 'rgba(224, 101, 92, 0.4)'; ctx.lineWidth = 4;
+    ctx.beginPath(); ctx.moveTo(margin, yRed); ctx.lineTo(redX, yRed); ctx.stroke();
+    
+    ctx.beginPath(); ctx.arc(redX, yRed, 6, 0, Math.PI*2);
+    ctx.fillStyle = '#e0655c'; ctx.fill();
+    ctx.fillText('MERAH (MAJU)', Math.min(Math.max(redX, margin+40), w-margin-40), yRed - 15);
+
+    // Blue Team Progress (moves right to left)
+    const blueX = w - margin - trackW * p;
+    ctx.strokeStyle = 'rgba(91, 140, 232, 0.4)'; ctx.lineWidth = 4;
+    ctx.beginPath(); ctx.moveTo(w-margin, yBlue); ctx.lineTo(blueX, yBlue); ctx.stroke();
+    
+    ctx.beginPath(); ctx.arc(blueX, yBlue, 6, 0, Math.PI*2);
+    ctx.fillStyle = '#5b8ce8'; ctx.fill();
+    ctx.fillText('BIRU (MUNDUR)', Math.min(Math.max(blueX, margin+45), w-margin-45), yBlue + 22);
+    
+    // Connect them with a sync line
+    ctx.strokeStyle = 'rgba(255,255,255,0.15)'; ctx.lineWidth = 1.5; ctx.setLineDash([3,3]);
+    ctx.beginPath(); ctx.moveTo(redX, yRed); ctx.lineTo(blueX, yBlue); ctx.stroke();
+    ctx.setLineDash([]);
+  }
+
+  onVisible(canvas, ()=>{ draw(); });
+  slider.addEventListener('input', draw);
+  draw();
+})();
+
+/* ===================================================================
+   SCENE 1B: Inverted Bullet Catching
+=================================================================== */
+(function(){
+  const canvas = document.getElementById('bulletCanvas');
+  const slider = document.getElementById('bulletSlider');
+  const valText = document.getElementById('bulletVal');
+  const caption = document.getElementById('bulletCaption');
+  if(!canvas) return;
+  let { w, h, ctx } = fitCanvas(canvas);
+  window.addEventListener('resize', ()=>{ ({w,h,ctx} = fitCanvas(canvas)); draw(); });
+
+  function draw(){
+    const p = slider.value / 100;
+    valText.textContent = slider.value + '%';
+    ctx.clearRect(0,0,w,h);
+    ctx.fillStyle = '#0f1117'; ctx.fillRect(0,0,w,h);
+
+    const gunX = w - 60;
+    const wallX = 50;
+    const y = h/2;
+
+    // Wall
+    ctx.fillStyle = '#33353f'; ctx.fillRect(10, y-40, 40, 80);
+    // Bullet hole / crack
+    ctx.strokeStyle = '#1c1f29'; ctx.lineWidth=2;
+    ctx.beginPath(); ctx.moveTo(wallX, y); ctx.lineTo(wallX-15, y-15); ctx.moveTo(wallX, y); ctx.lineTo(wallX-12, y+18); ctx.stroke();
+
+    // Gun
+    ctx.fillStyle = '#5b5d68'; 
+    ctx.fillRect(gunX, y-5, 40, 12); // barrel
+    ctx.fillRect(gunX+25, y-5, 12, 35); // handle
+
+    // Bullet (moves from wall to gun as p goes 0 -> 1)
+    const bulletX = wallX + (gunX - wallX) * p;
+    ctx.fillStyle = '#5b8ce8';
+    ctx.beginPath();
+    ctx.arc(bulletX, y, 5, 0, Math.PI*2);
+    ctx.fill();
+    // Motion trail
+    if(p > 0.05 && p < 0.95) {
+       ctx.strokeStyle = 'rgba(91, 140, 232, 0.5)'; ctx.lineWidth=2.5;
+       ctx.beginPath(); ctx.moveTo(bulletX+5, y); ctx.lineTo(bulletX+25, y); ctx.stroke();
+    }
+
+    if(p === 0) {
+      caption.textContent = 'Status Kuantum: Peluru tertanam di medium pembatas (Dinding)';
+    } else if (p < 1) {
+      caption.textContent = 'Trajektori Terbalik: Peluru tertarik kembali menelusuri vektor angin';
+    } else {
+      caption.textContent = 'Eksekusi: Peluru terkunci di dalam laras. Tangan terhentak mundurnya pelatuk.';
+    }
+  }
+  onVisible(canvas, ()=>{ draw(); });
+  slider.addEventListener('input', draw);
+  draw();
+})();
+
+/* ===================================================================
+   SCENE 2B: Proving Window Mirror
+=================================================================== */
+(function(){
+  const canvas = document.getElementById('mirrorCanvas');
+  const slider = document.getElementById('mirrorSlider');
+  if(!canvas) return;
+  let { w, h, ctx } = fitCanvas(canvas);
+  window.addEventListener('resize', ()=>{ ({w,h,ctx} = fitCanvas(canvas)); draw(); });
+
+  function drawFigure(x,y,col,facing){
+    ctx.save();
+    ctx.translate(x,y);
+    ctx.scale(facing,1);
+    ctx.strokeStyle = col; ctx.lineWidth = 2.4; ctx.lineCap='round';
+    ctx.beginPath(); ctx.arc(0,-20,6,0,Math.PI*2); ctx.stroke();
+    ctx.beginPath(); ctx.moveTo(0,-14); ctx.lineTo(0,8); ctx.stroke();
+    ctx.beginPath(); ctx.moveTo(0,-6); ctx.lineTo(-10,2); ctx.moveTo(0,-6); ctx.lineTo(10,-10); ctx.stroke();
+    ctx.beginPath(); ctx.moveTo(0,8); ctx.lineTo(-8,22); ctx.moveTo(0,8); ctx.lineTo(8,22); ctx.stroke();
+    ctx.restore();
+  }
+
+  function draw(){
+    const p = slider.value / 100;
+    ctx.clearRect(0,0,w,h);
+    ctx.fillStyle = '#0f1117'; ctx.fillRect(0,0,w,h);
+
+    const midX = w/2;
+    const y = h/2 + 10;
+    
+    // Proving window glass
+    ctx.fillStyle = 'rgba(198, 214, 245, 0.08)';
+    ctx.fillRect(midX - 3, 20, 6, h-40);
+    ctx.strokeStyle = 'rgba(198, 214, 245, 0.4)'; ctx.lineWidth = 2;
+    ctx.strokeRect(midX - 3, 20, 6, h-40);
+
+    // Corridor ground
+    ctx.strokeStyle = 'rgba(255,255,255,0.05)';
+    ctx.beginPath(); ctx.moveTo(0, y+22); ctx.lineTo(w, y+22); ctx.stroke();
+
+    // Protagonist (Red)
+    const protagX = 30 + (midX - 30) * p;
+    drawFigure(protagX, y, '#e0655c', 1);
+
+    // Inverted Protagonist (Blue)
+    const invX = w - 30 - (w/2 - 30) * p;
+    drawFigure(invX, y, '#5b8ce8', -1);
+
+    // Annihilation / Merge Effect when touching the turnstile
+    if(p > 0.96) {
+      ctx.beginPath();
+      ctx.arc(midX, y-5, 30, 0, Math.PI*2);
+      ctx.fillStyle = 'rgba(255,255,255,0.2)';
+      ctx.fill();
+    }
+  }
+  onVisible(canvas, ()=>{ draw(); });
+  slider.addEventListener('input', draw);
+  draw();
+})();
+
+/* ===================================================================
+   SCENE 3B: Inverted Car Thermodynamics
+=================================================================== */
+(function(){
+  const canvas = document.getElementById('carPhysicsCanvas');
+  const btn = document.getElementById('btnExplode');
+  const stateLabel = document.getElementById('carState');
+  if(!canvas) return;
+  let { w, h, ctx } = fitCanvas(canvas);
+  window.addEventListener('resize', ()=>{ ({w,h,ctx} = fitCanvas(canvas)); });
+
+  let exploded = false;
+  let particles = [];
+  let running = true;
+
+  function initParticles() {
+    particles = [];
+    for(let i=0; i<80; i++){
+       particles.push({
+         x: w/2 + (Math.random()-0.5)*90,
+         y: h/2 + (Math.random()-0.5)*50,
+         vx: (Math.random()-0.5)*1.5,
+         vy: (Math.random()-0.5)*1.5 - 0.5,
+         life: Math.random()
+       });
+    }
+  }
+
+  function draw(){
+    ctx.clearRect(0,0,w,h);
+    ctx.fillStyle = '#0f1117'; ctx.fillRect(0,0,w,h);
+
+    // Road
+    ctx.fillStyle = '#1c1f29'; ctx.fillRect(0, h/2+15, w, 40);
+
+    // Car (Simple Box)
+    const carX = w/2 - 35;
+    const carY = h/2 - 10;
+    ctx.fillStyle = '#5b5d68'; ctx.fillRect(carX, carY, 70, 25);
+    ctx.fillStyle = '#a0a3b0'; ctx.fillRect(carX+15, carY-15, 35, 15); // roof
+    
+    // Wheels
+    ctx.fillStyle = '#111'; 
+    ctx.beginPath(); ctx.arc(carX+15, carY+25, 9, 0, Math.PI*2); ctx.fill();
+    ctx.beginPath(); ctx.arc(carX+55, carY+25, 9, 0, Math.PI*2); ctx.fill();
+
+    if(exploded) {
+       // Draw ice crystals forming
+       particles.forEach(p => {
+          p.x += p.vx; p.y += p.vy; p.life -= 0.015;
+          if(p.life < 0) {
+             p.x = w/2 + (Math.random()-0.5)*90;
+             p.y = h/2 + (Math.random()-0.5)*50;
+             p.life = 1;
+          }
+          ctx.beginPath();
+          ctx.moveTo(p.x, p.y); ctx.lineTo(p.x+4, p.y+6); ctx.lineTo(p.x-4, p.y+6); ctx.closePath();
+          ctx.fillStyle = `rgba(198, 214, 245, ${p.life})`; // Ice blue
+          ctx.fill();
+       });
+       
+       // Ice crust on car
+       ctx.fillStyle = 'rgba(198, 214, 245, 0.45)';
+       ctx.fillRect(carX-8, carY-18, 86, 50);
+    }
+
+    if(running) requestAnimationFrame(draw);
+  }
+  
+  onVisible(canvas, v=>{ running = v; if(v) requestAnimationFrame(draw); });
+  requestAnimationFrame(draw);
+
+  btn.addEventListener('click', ()=>{
+     exploded = !exploded;
+     if(exploded) {
+       btn.textContent = 'Kembalikan Kondisi Awal';
+       btn.classList.replace('blue', 'active');
+       stateLabel.innerHTML = '<span style="color:#c6d6f5;">Radiasi endotermik! Lapisan es terbentuk secara termodinamis.</span>';
+       initParticles();
+     } else {
+       btn.textContent = 'Simulasikan Perpindahan Kalor Terbalik';
+       btn.classList.replace('active', 'blue');
+       stateLabel.textContent = 'Mobil melaju dalam suhu ekuilibrium';
+     }
+  });
+})();
+
+/* ===================================================================
+   SCENE 4B: Stalsk-12 Gate & Neil's Causal Loop
+=================================================================== */
+(function(){
+  const canvas = document.getElementById('gateCanvas');
+  const slider = document.getElementById('gateSlider');
+  const caption = document.getElementById('gateCaption');
+  if(!canvas) return;
+  let { w, h, ctx } = fitCanvas(canvas);
+  window.addEventListener('resize', ()=>{ ({w,h,ctx} = fitCanvas(canvas)); draw(); });
+
+  function draw(){
+    const p = slider.value / 100;
+    ctx.clearRect(0,0,w,h);
+    ctx.fillStyle = '#0f1117'; ctx.fillRect(0,0,w,h);
+
+    const gateX = w/2;
+    const yFloor = h/2 + 20;
+
+    // Floor
+    ctx.strokeStyle = '#33353f'; ctx.lineWidth = 2;
+    ctx.beginPath(); ctx.moveTo(0, yFloor); ctx.lineTo(w, yFloor); ctx.stroke();
+
+    // Gate
+    ctx.strokeStyle = p > 0.4 && p < 0.8 ? '#3d7a4f' : '#e0655c'; // Green if open
+    ctx.lineWidth = 4;
+    ctx.beginPath(); ctx.moveTo(gateX, yFloor); ctx.lineTo(gateX, yFloor - 60); ctx.stroke();
+    
+    // Volkov (Right side)
+    ctx.fillStyle = '#e0655c';
+    ctx.fillRect(w - 50, yFloor - 45, 20, 45);
+    ctx.font = '9px "IBM Plex Mono", monospace'; ctx.textAlign='center';
+    ctx.fillText('Musuh', w - 40, yFloor - 52);
+
+    // Neil (Blue)
+    ctx.fillStyle = '#5b8ce8';
+    
+    if(p < 0.2) {
+       // Dead on the floor
+       caption.innerHTML = '<span style="color:#e0655c;">T=0 (Merah): Mayat Neil membujur kaku menghalangi akses</span>';
+       ctx.fillRect(gateX - 55, yFloor - 12, 45, 12); 
+    } else if (p < 0.4) {
+       // Rising up, catching bullet
+       caption.innerHTML = '<span style="color:#e0655c;">T=1 (Merah): Mayat merekonstruksi diri, menyerap energi balistik</span>';
+       ctx.fillRect(gateX - 30, yFloor - 35, 18, 35); 
+       // Bullet flying right to Volkov's gun
+       const bx = (gateX - 12) + (w - 50 - (gateX - 12)) * ((p-0.2)/0.2);
+       ctx.beginPath(); ctx.arc(bx, yFloor - 25, 4, 0, Math.PI*2); ctx.fillStyle='#f2c14e'; ctx.fill();
+    } else if (p < 0.7) {
+       // Unlocking gate
+       caption.innerHTML = '<span style="color:#e0655c;">T=2 (Merah): Entitas biru memutar mekanika gembok membuka gerbang</span>';
+       ctx.fillRect(gateX - 25, yFloor - 45, 18, 45); 
+       ctx.beginPath(); ctx.moveTo(gateX-7, yFloor-35); ctx.lineTo(gateX+5, yFloor-45); ctx.strokeStyle='#5b8ce8'; ctx.stroke(); 
+    } else {
+       // Running backwards away
+       caption.innerHTML = '<span style="color:#e0655c;">T=3 (Merah): Entitas berlari mundur menjauh. Gerbang kembali terkunci otomatis.</span>';
+       const runX = (gateX - 25) - ((gateX - 25) - 20) * ((p-0.7)/0.3);
+       ctx.fillRect(runX, yFloor - 45, 18, 45);
+    }
+  }
+
+  onVisible(canvas, ()=>{ draw(); });
+  slider.addEventListener('input', draw);
+  draw();
+})();
+
+/* ===================================================================
+   SCENE 6: Dead Drops & Information Paradox
+=================================================================== */
+(function(){
+  const canvas = document.getElementById('capsuleCanvas');
+  const slider = document.getElementById('capsuleSlider');
+  if(!canvas) return;
+  let { w, h, ctx } = fitCanvas(canvas);
+  window.addEventListener('resize', ()=>{ ({w,h,ctx} = fitCanvas(canvas)); draw(); });
+
+  function draw(){
+    const p = slider.value / 100;
+    ctx.clearRect(0,0,w,h);
+    ctx.fillStyle = '#0f1117'; ctx.fillRect(0,0,w,h);
+
+    const margin = 30;
+    const trackW = w - margin*2;
+    const ySurface = h/2 - 20;
+    const yUnderground = h/2 + 25;
+
+    // Surface line
+    ctx.strokeStyle = '#33353f'; ctx.lineWidth = 2;
+    ctx.beginPath(); ctx.moveTo(margin, ySurface); ctx.lineTo(w-margin, ySurface); ctx.stroke();
+
+    // Time Axis Text
+    ctx.fillStyle = '#8a90a6'; ctx.font = '10px "IBM Plex Mono", monospace';
+    ctx.textAlign = 'center';
+    ctx.fillText('Masa Kini (Sator)', margin + 40, ySurface - 20);
+    ctx.fillText('Masa Depan (+300 thn)', w - margin - 40, ySurface - 20);
+
+    // Current Time Marker (Scanner Line)
+    const currentX = margin + trackW * p;
+    ctx.strokeStyle = 'rgba(255,255,255,0.15)'; ctx.setLineDash([3,3]); ctx.lineWidth = 1;
+    ctx.beginPath(); ctx.moveTo(currentX, 20); ctx.lineTo(currentX, h-10); ctx.stroke();
+    ctx.setLineDash([]);
+    ctx.fillStyle = 'rgba(255,255,255,0.8)';
+    ctx.fillText('WAKTU', currentX, 15);
+
+    // Timeline Path (Capsule moving forward)
+    ctx.strokeStyle = 'rgba(224, 101, 92, 0.4)'; ctx.lineWidth = 3;
+    ctx.beginPath(); ctx.moveTo(margin + 50, yUnderground - 6); ctx.lineTo(w - margin - 50, yUnderground - 6); ctx.stroke();
+    // Timeline Path (Gold moving backward)
+    ctx.strokeStyle = 'rgba(242, 193, 78, 0.4)'; ctx.lineWidth = 3;
+    ctx.beginPath(); ctx.moveTo(w - margin - 50, yUnderground + 10); ctx.lineTo(margin + 50, yUnderground + 10); ctx.stroke();
+
+    // Capsule Box
+    ctx.fillStyle = '#e0655c'; 
+    if (p > 0.05) {
+       ctx.fillRect(Math.min(currentX, w - margin - 55), yUnderground - 12, 14, 10);
+    }
+    
+    // Inverted Gold Box
+    ctx.fillStyle = '#f2c14e';
+    if (p < 0.95) {
+       ctx.fillRect(Math.max(currentX, margin + 45), yUnderground + 4, 14, 10);
+    }
+
+    // Digging markers
+    if (p < 0.1) {
+       ctx.fillStyle = '#e0655c'; ctx.fillText('↓ Kubur Kapsul', margin + 50, ySurface - 5);
+       ctx.fillStyle = '#f2c14e'; ctx.fillText('↑ Gali Emas', margin + 50, ySurface + 65);
+    } else if (p > 0.9) {
+       ctx.fillStyle = '#e0655c'; ctx.fillText('↑ Gali Kapsul', w - margin - 50, ySurface - 5);
+       ctx.fillStyle = '#f2c14e'; ctx.fillText('↓ Kubur Emas (Terbalik)', w - margin - 50, ySurface + 65);
+    }
+  }
+
+  onVisible(canvas, ()=>{ draw(); });
+  slider.addEventListener('input', draw);
+  draw();
+})();
+
+/* ===================================================================
+   SCENE 7: Biomechanics of a punch
+=================================================================== */
+(function(){
+  const canvas = document.getElementById('punchCanvas');
+  const slider = document.getElementById('punchSlider');
+  const caption = document.getElementById('punchCaption');
+  if(!canvas) return;
+  let { w, h, ctx } = fitCanvas(canvas);
+  window.addEventListener('resize', ()=>{ ({w,h,ctx} = fitCanvas(canvas)); draw(); });
+
+  function draw(){
+    const p = slider.value / 100;
+    ctx.clearRect(0,0,w,h);
+    ctx.fillStyle = '#0f1117'; ctx.fillRect(0,0,w,h);
+
+    const y = h/2;
+    const leftX = w/2 - 60;
+    const rightX = w/2 + 60;
+
+    // Protagonist (Red) Arm
+    let redX = leftX;
+    if(p > 0.2 && p < 0.5) {
+       redX = leftX + (w/2 - leftX) * ((p-0.2)/0.3);
+    } else if (p >= 0.5 && p < 0.8) {
+       redX = w/2 - (w/2 - leftX) * ((p-0.5)/0.3);
+    } else if (p >= 0.8) {
+       redX = leftX;
+    }
+
+    // Inverted Protagonist (Blue) Face/Body
+    let blueX = rightX;
+    if(p < 0.2) {
+       blueX = rightX + 25 - (25) * (p/0.2); 
+    } else if (p >= 0.2 && p < 0.5) {
+       blueX = rightX - (rightX - w/2) * ((p-0.2)/0.3);
+    } else if (p >= 0.5 && p < 0.8) {
+       blueX = w/2 + (rightX + 25 - w/2) * ((p-0.5)/0.3);
+    } else if (p >= 0.8) {
+       blueX = rightX + 25;
+    }
+
+    // Draw Blue body
+    ctx.fillStyle = '#5b8ce8';
+    ctx.fillRect(blueX, y-20, 20, 40); // head/body
+    ctx.beginPath(); ctx.moveTo(blueX+10, y+20); ctx.lineTo(blueX+10, y+40); ctx.strokeStyle='#5b8ce8'; ctx.lineWidth=4; ctx.stroke(); // body
+    
+    // Draw Red Arm
+    ctx.fillStyle = '#e0655c';
+    ctx.fillRect(redX - 35, y-10, 35, 20); // arm
+    ctx.beginPath(); ctx.arc(redX, y, 11, 0, Math.PI*2); ctx.fill(); // fist
+
+    // Caption Logic
+    if(p < 0.2) {
+       caption.innerHTML = '<span style="color:#e0655c;">(T=0) Biru terlihat terseret maju dengan aneh. Merah bersiap.</span>';
+    } else if (p >= 0.2 && p < 0.45) {
+       caption.innerHTML = '<span style="color:#e0655c;">(T=1) Merah melempar tinju. Wajah biru seperti tersedot "menjemput" tinju.</span>';
+    } else if (p >= 0.45 && p < 0.55) {
+       caption.innerHTML = '<span style="color:#fff;">(T=2) BENTURAN! Momentum bertukar lintas entropi yang berlawanan.</span>';
+       ctx.beginPath(); ctx.arc(w/2, y, 20, 0, Math.PI*2); ctx.fillStyle='rgba(255,255,255,0.4)'; ctx.fill();
+    } else if (p >= 0.55 && p < 0.8) {
+       caption.innerHTML = '<span style="color:#e0655c;">(T=3) Merah menarik tangannya. Biru terdorong ke belakang secara natural.</span>';
+    } else {
+       caption.innerHTML = '<span style="color:#e0655c;">(T=4) Keduanya kembali ke kuda-kuda dan menjauh.</span>';
+    }
+  }
+
+  onVisible(canvas, ()=>{ draw(); });
+  slider.addEventListener('input', draw);
+  draw();
+})();
+</script>
 </body>
 </html>
