@@ -12,23 +12,29 @@ function onVisible(canvas, cb){
 
 function fitCanvas(canvas){
   const ratio = window.devicePixelRatio || 1;
+
+  // Simpan tinggi asli SEKALI di data attribute sebelum JS menimpanya.
+  // canvas.height = N akan mengubah HTML attribute 'height', makanya kita
+  // pakai data-base-height sebagai sumber kebenaran yang aman.
+  if(!canvas.dataset.baseHeight){
+    canvas.dataset.baseHeight = canvas.getAttribute('height') || '150';
+  }
+
   const parentStyle = window.getComputedStyle(canvas.parentElement);
   const padX = parseFloat(parentStyle.paddingLeft) + parseFloat(parentStyle.paddingRight);
-  const cssW = canvas.parentElement.clientWidth - padX;
-  
-  // Ambil tinggi asli dari atribut HTML
-  const baseH = parseFloat(canvas.getAttribute('height')) || 150;
-  // Jika di layar mobile (<600px), buat 1.4x lebih panjang
-  const isMobile = window.innerWidth < 600;
-  const cssH = isMobile ? baseH * 1.4 : baseH;
+  const cssW = Math.max(1, canvas.parentElement.clientWidth - padX);
 
-  canvas.style.width = cssW + 'px';
+  const baseH = parseFloat(canvas.dataset.baseHeight);
+  const isMobile = window.innerWidth < 600;
+  const cssH = isMobile ? Math.round(baseH * 1.4) : baseH;
+
+  canvas.style.width  = cssW + 'px';
   canvas.style.height = cssH + 'px';
-  canvas.width = cssW * ratio;
-  canvas.height = cssH * ratio;
-  
+  canvas.width  = Math.round(cssW * ratio);
+  canvas.height = Math.round(cssH * ratio);
+
   const ctx = canvas.getContext('2d');
-  ctx.setTransform(ratio,0,0,ratio,0,0);
+  ctx.setTransform(ratio, 0, 0, ratio, 0, 0);
   return { w: cssW, h: cssH, ctx };
 }
 
